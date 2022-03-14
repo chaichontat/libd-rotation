@@ -17,6 +17,8 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.10"]
+    env:
+      RENV_PATHS_ROOT: ~/.local/share/renv
 
     steps:
       - uses: actions/checkout@v3
@@ -29,30 +31,21 @@ jobs:
       - uses: pre-commit/action@v2.0.3
         if: ${{ matrix.os == 'ubuntu-latest'}}
 
-      - name: Set RENV_PATHS_ROOT
-        run: |
-          echo "RENV_PATHS_ROOT=${{ runner.temp }}/renv" >> $GITHUB_ENV
-      - name: Install and activate renv
-        run: |
-          install.packages("renv")
-          renv::activate()
-        shell: Rscript {0}
+      - uses: r-lib/actions/setup-r@v2
 
-      - name: Get R and OS version
-        id: get-version
-        run: |
-          cat("##[set-output name=os-version;]", sessionInfo()$running, "\n", sep = "")
-          cat("##[set-output name=r-version;]", R.Version()$version.string, sep = "")
-        shell: Rscript {0}
+      - name: Setup R dependencies
+        if: ${{ matrix.os == 'ubuntu-latest'}}
+        run: sudo apt install -y libcurl4-openssl-dev
 
-      - name: Restore Renv package cache
+      - name: Cache Renv Package
         uses: actions/cache@v2
         with:
           path: ${{ env.RENV_PATHS_ROOT }}
           key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
           restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
 
-      - name: Get R and OS version
-        run: |
-          renv::restore()
+      - name: Restore packages
         shell: Rscript {0}
+        run: |
+          if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+          renv::restore()
