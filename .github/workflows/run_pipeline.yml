@@ -37,12 +37,17 @@ jobs:
         if: ${{ matrix.os == 'ubuntu-latest'}}
         run: sudo apt install -y libcurl4-openssl-dev
 
-      - name: Cache Renv Package
+      - name: Cache Renv Package and data
         uses: actions/cache@v2
         with:
-          path: ${{ env.RENV_PATHS_ROOT }}
+          path: |
+            ${{ env.RENV_PATHS_ROOT }}
+            ./SCE_DLPFC-n3_tran-etal.rda
           key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
           restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
+
+      - name: Get Data
+        run: wget -nc https://libd-snrnaseq-pilot.s3.us-east-2.amazonaws.com/SCE_DLPFC-n3_tran-etal.rda
 
       - name: Restore packages
         shell: Rscript {0}
