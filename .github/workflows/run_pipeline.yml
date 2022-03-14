@@ -1,0 +1,46 @@
+name: Run Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  release:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      matrix:
+        os: ["ubuntu-latest"]
+        python-version: ["3.10"]
+    env:
+      RENV_PATHS_ROOT: ~/.local/share/renv
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - uses: pre-commit/action@v2.0.3
+        if: ${{ matrix.os == 'ubuntu-latest'}}
+
+      - name: Cache packages
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.RENV_PATHS_ROOT }}
+          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-renv-
+
+      - name: Restore packages
+        shell: Rscript {0}
+        run: |
+          if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+          renv::restore()
