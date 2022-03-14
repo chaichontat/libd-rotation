@@ -19,6 +19,7 @@ jobs:
         python-version: ["3.10"]
     env:
       RENV_PATHS_ROOT: ~/.local/share/renv
+      BASILISK_EXTERNAL_DIR:  ~/.local/share/basilisk
 
     steps:
       - uses: actions/checkout@v3
@@ -42,6 +43,7 @@ jobs:
         with:
           path: |
             ${{ env.RENV_PATHS_ROOT }}
+            ${{ env.BASILISK_EXTERNAL_DIR }}
             ./SCE_DLPFC-n3_tran-etal.rda
           key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
           restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
@@ -54,3 +56,9 @@ jobs:
         run: |
           if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
           renv::restore()
+
+      - name: Convert to Anndata
+        shell: Rscript {0}
+        run: |
+          source("convert.R")
+          convert_to_anndata("SCE_DLPFC-n3_tran-etal.rda", "sce.h5ad")
