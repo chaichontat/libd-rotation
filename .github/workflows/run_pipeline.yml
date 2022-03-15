@@ -52,9 +52,14 @@ jobs:
       - uses: conda-incubator/setup-miniconda@v2
         with:
           miniforge-version: latest
-          environment-file: environment.yml
+          environment-file: .github/ci_env.yml
           activate-environment: libd-rotation
           use-only-tar-bz2: true # IMPORTANT: This needs to be set for caching to work properly!
+
+      - name: Install using conda-lock
+        run: |
+          conda-lock install --name libd-rotation conda-lock.yml
+          pip install git+https://github.com/chaichontat/anndata2ri omnipath squidpy tangram
 
       - name: Get Data
         run: wget -nc https://libd-snrnaseq-pilot.s3.us-east-2.amazonaws.com/SCE_DLPFC-n3_tran-etal.rda

@@ -1,11 +1,29 @@
+# scanpy + squidpy + tangram
 channels:
   - "conda-forge"
 dependencies:
   - python=3.9
+  - anndata
   - click
+  - dask
+  - dask-image
+  - docrep
+  - matplotlib
+  - leidenalg
+  - numba
+  - pandas
   - pip
   - rpy2
   - scanpy
+  - scikit-learn
+  - scipy
   - seaborn
+  - tqdm
+  - typing_extensions
+  - xarray
+  - zarr
   - pip:
+      - omnipath
       - git+https://github.com/chaichontat/anndata2ri
+      - squidpy
+      - tangram
