@@ -19,7 +19,7 @@ logger = getLogger(__name__)
 @click.argument(
     "project_path",
     nargs=1,
-    type=click.Path(exists=True, file_okay=False, path_type=Path),
+    type=click.Path(file_okay=False, path_type=Path),
 )
 @click.argument(
     "lock_file_path",
@@ -54,6 +54,8 @@ def convert(
         output_path (Path): _description_
         obj_name (Union[str, None]): _description_
     """
+    project_path.mkdir(parents=True, exist_ok=True)
+
     base = importr("base")
     init.restore_renv(project_path, lock_file_path)
     logger.info("RENV successfully restored.")
