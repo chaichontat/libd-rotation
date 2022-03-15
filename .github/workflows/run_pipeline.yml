@@ -17,8 +17,6 @@ jobs:
       matrix:
         os: ["ubuntu-latest"]
         python-version: ["3.10"]
-    env:
-      RENV_PATHS_ROOT: ~/.local/share/renv
 
     steps:
       - uses: actions/checkout@v3
@@ -66,4 +64,4 @@ jobs:
 
       - name: Test run
         run: |
-          python scripts/convert_anndata.py ${RENV_PATHS_ROOT} renv.lock SCE_DLPFC-n3_tran-etal.rda sce_tran.h5ad
+          python scripts/convert_anndata.py r_dir renv.lock SCE_DLPFC-n3_tran-etal.rda sce_tran.h5ad
