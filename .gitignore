@@ -1,3 +1,7 @@
+.vscode/
+**.RData
+**.rda
+**.RData
 **/renv/
 **.h5ad
 # Byte-compiled / optimized / DLL files

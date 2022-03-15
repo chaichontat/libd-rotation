@@ -25,10 +25,12 @@ build-backend = "poetry.core.masonry.api"
 requires = ["poetry-core>=1.0.0"]
 
 [tool.black]
+include = "libd_rotation"
 line-length = 110
 target-version = ['py310']
 
 [tool.pyright]
+include = ["libd_rotation"]
 pythonVersion = "3.10"
 reportMissingTypeStubs = false
 reportPrivateUsage = false
@@ -43,3 +45,4 @@ typeCheckingMode = "strict"
 line_length = 110
 profile = "black"
 py_version = 310
+src_paths = ["libd_rotation"]
