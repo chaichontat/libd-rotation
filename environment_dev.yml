@@ -1,0 +1,10 @@
+channels:
+  - "conda-forge"
+dependencies:
+  - black
+  - conda-lock
+  - isort
+  - pre-commit
+  - pytest
+  - radian
+  - tox

@@ -1,0 +1,20 @@
+channels:
+  - "conda-forge"
+dependencies:
+  - python=3.9
+  - click
+  - dask-image
+  - docrep
+  - leidenalg
+  - pip
+  - rpy2
+  - scanpy
+  - scikit-image
+  - scikit-learn
+  - seaborn
+  - xarray
+  - zarr
+  - pip:
+      - git+https://github.com/chaichontat/anndata2ri
+      - omnipath
+      - squidpy
