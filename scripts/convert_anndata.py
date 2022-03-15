@@ -22,6 +22,11 @@ logger = getLogger(__name__)
     type=click.Path(exists=True, file_okay=False, path_type=Path),
 )
 @click.argument(
+    "lock_file_path",
+    nargs=1,
+    type=click.Path(exists=True, dir_okay=False, path_type=Path),
+)
+@click.argument(
     "rdata_path",
     nargs=1,
     type=click.Path(exists=True, dir_okay=False, path_type=Path),
@@ -37,9 +42,11 @@ logger = getLogger(__name__)
     default=None,
     help="Name of the object to convert. Defaults to the first object in the file.",
 )
-def convert(project_path: Path, rdata_path: Path, output_path: Path, obj_name: Union[str, None]):
+def convert(
+    project_path: Path, lock_file_path: Path, rdata_path: Path, output_path: Path, obj_name: Union[str, None]
+):
     """
-    Convert RDATA_PATH to OBJ_NAME using PROJECT_PATH for R.
+    Convert RDATA_PATH to OBJ_NAME using PROJECT_PATH and lock file LOCK_FILE_PATH for R.
 
     Args:
         project_path (Path): _description_
@@ -48,7 +55,7 @@ def convert(project_path: Path, rdata_path: Path, output_path: Path, obj_name: U
         obj_name (Union[str, None]): _description_
     """
     base = importr("base")
-    init.restore_renv(project_path, project_path / "renv.lock")
+    init.restore_renv(project_path, lock_file_path)
     logger.info("RENV successfully restored.")
 
     objs = init.load(rdata_path)
@@ -56,6 +63,7 @@ def convert(project_path: Path, rdata_path: Path, output_path: Path, obj_name: U
     logger.info(f"Converting {to_conv}.")
 
     adata = rpy2py_single_cell_experiment(base.get(to_conv))
+    adata.obs.detected = adata.obs.detected.astype(int)  # Emergency fix.
     adata.write_h5ad(output_path)
     logger.info("Done!")
 
