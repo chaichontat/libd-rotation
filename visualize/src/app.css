@@ -1,12 +1,20 @@
 @import url(https://fonts.googleapis.com/css?family=Inter);
 @tailwind base;
 @layer base {
-	html {
-		font-family: 'Inter', sans-serif;
-	}
-	body {
-		@apply bg-gray-900;
-	}
+  html {
+    font-family: 'Inter', sans-serif;
+  }
+  body {
+    @apply bg-gray-900;
+  }
 }
 @tailwind components;
+@layer components {
+  .button-base {
+    @apply border-gray-700 bg-gray-800 px-5 py-2 text-sm font-medium text-white hover:bg-gray-700 focus:outline-none focus:ring-1 focus:ring-gray-700;
+  }
+  .button {
+    @apply button-base mr-2 mb-2 rounded-lg;
+  }
+}
 @tailwind utilities;
