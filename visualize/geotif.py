@@ -32,7 +32,7 @@ def gen_files(img: np.ndarray, path: Path):
         ) as dst:
             for j in range(3):
                 idx = j + 3 * i
-                dst.write(img[idx], j + 1)
+                dst.write(img[idx, ::-1], j + 1)
             dst.build_overviews([4, 8, 16, 32, 64], Resampling.nearest)
     return ps
 

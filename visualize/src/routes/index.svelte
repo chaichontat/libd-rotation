@@ -1,6 +1,6 @@
 <script>
-  import Mapp from './mapp.svelte';
-  import Scatter from './scatter.svelte';
+  import Mapp from '../pages/mapp.svelte';
+  import Scatter from '../pages/scatter.svelte';
   import fetcher from '../fetcher';
 
   const sample = 'Br6522_Ant_IF';
@@ -15,7 +15,7 @@
 <main class="grid grid-cols-1 gap-x-2 md:grid-cols-2">
   {#await dataPromise then data}
     <Scatter {data} />
-    <Mapp />
+    <Mapp {sample} />
   {/await}
 </main>
 

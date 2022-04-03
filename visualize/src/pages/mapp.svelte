@@ -17,7 +17,7 @@
   let layer: TileLayer;
   let sourceTiff: GeoTIFF;
   let map: Map;
-
+  export let sample: string;
   let maxIntensity: [number, number, number] = [100, 100, 100]; // Inverted
   let showing: [Protein, Protein, Protein] = ['DAPI', 'TMEM119', 'Olig2'];
 
@@ -35,7 +35,6 @@
 
   function getColorParams(showing: [Protein, Protein, Protein], max: [number, number, number]) {
     const len = proteins.length - 1;
-
     const variables = {
       blue: Math.min(mapping[showing[0]], len),
       green: Math.min(mapping[showing[1]], len),
@@ -47,8 +46,6 @@
       greenMask: mapping[showing[1]] > len ? 0 : 1,
       redMask: mapping[showing[2]] > len ? 0 : 1
     };
-    console.log(variables);
-
     return variables;
   }
 
@@ -69,20 +66,18 @@
       sources: dev
         ? [
             // TODO: Why does GeoTiff.js fill the last band from the penultimate band?
-            { url: `${base}/cogs/c_11.tif` },
-            { url: `${base}/cogs/c_21.tif` }
+            { url: `${base}/cogs/${sample}_1.tif` },
+            { url: `${base}/cogs/${sample}_2.tif` }
           ]
         : [
             {
-              url: `https://chaichontat-host.s3.us-west-004.backblazeb2.com/libd-rotation/Br8667_Post_IF_1.tif`
+              url: `https://chaichontat-host.s3.us-west-004.backblazeb2.com/libd-rotation/${sample}_1.tif`
             },
             {
-              url: `https://chaichontat-host.s3.us-west-004.backblazeb2.com/libd-rotation/Br8667_Post_IF_2.tif`
+              url: `https://chaichontat-host.s3.us-west-004.backblazeb2.com/libd-rotation/${sample}_2.tif`
             }
           ]
     });
-
-    console.log(sourceTiff);
 
     layer = new TileLayer({
       style: {
@@ -107,7 +102,7 @@
 
   $: {
     if ($store.locked !== -1 && map) {
-      const { x, y } = $store.lockedCoords;
+      let { x, y } = $store.lockedCoords;
       map.getView().animate({
         center: [x, y],
         duration: 100,

@@ -1,6 +1,5 @@
 <script lang="ts">
-  import Chart from 'chart.js/auto/auto.js';
-  import type { PointElement } from 'chart.js/auto';
+  import Chart, { type ActiveElement, type ChartEvent } from 'chart.js/auto/auto.js';
   import colormap from 'colormap';
 
   import { store } from '../store';
@@ -11,8 +10,6 @@
   export let data: Record<string, number[]>;
 
   const coords = data['coords'] as unknown as { x: number; y: number }[];
-  console.log(coords);
-
   const by_row = data['by_row'] as unknown as Record<string, number>[];
   delete data['coords'];
   delete data['by_row'];
@@ -27,7 +24,7 @@
     maxs.push(Math.max(...data[k]));
   }
 
-  let myChart: Chart<'scatter', number[], string>;
+  let myChart: Chart<'scatter', { x: number; y: number }[], string>;
   let bar: Chart<'bar', number[], string>;
 
   const colors = colormap({ colormap: 'viridis', nshades: 255, format: 'hex' });
@@ -57,7 +54,7 @@
   }
 
   onMount(() => {
-    const ctx = document.getElementById('myChart').getContext('2d');
+    const ctx = (document.getElementById('myChart') as HTMLCanvasElement).getContext('2d')!;
     $store.showingType = cellTypes[0];
     myChart = new Chart(ctx, {
       type: 'scatter',
@@ -65,8 +62,13 @@
         datasets: [
           {
             data: coords,
+            // @ts-ignore
             backgroundColor: getColor($store.showingType),
-            normalized: true
+            normalized: true,
+            pointRadius: 2.5,
+            pointHoverRadius: 15,
+            pointHoverBorderWidth: 1,
+            pointHoverBorderColor: '#eeeeee'
           }
         ]
       },
@@ -75,24 +77,43 @@
         aspectRatio: 1,
         scales: {
           x: { ticks: { display: false } },
-          y: { ticks: { display: false }, reverse: true }
+          y: { ticks: { display: false } }
         },
         plugins: {
           legend: { display: false },
           tooltip: {
-            events: ['mousemove', 'mouseout', 'touchstart', 'touchmove'],
-            callbacks: {
-              label: (tooltipItem) => {
-                $store.currIdx = tooltipItem.dataIndex;
-                return tooltipItem.dataIndex;
-              }
-            }
+            enabled: false
+            // events: ['mousemove', 'mouseout', 'touchstart', 'touchmove']
+            // callbacks: {
+            //   label: (tooltipItem: TooltipItem<'scatter'>) => {
+            //     $store.currIdx = tooltipItem.dataIndex;
+            //     return tooltipItem.dataIndex.toString();
+            //   }
+            // }
           }
+        },
+        onHover: (evt: ChartEvent, activeElements: ActiveElement[], chart: Chart) => {
+          if (activeElements.length === 0) return;
+          $store.currIdx = activeElements[0].index;
+        },
+        onClick: (evt: ChartEvent, activeElements: ActiveElement[], chart: Chart) => {
+          if (activeElements.length === 0) return;
+          const index = activeElements[0].index;
+          activeElements[0].element.options.radius = 100;
+          myChart.update();
+
+          if (index === $store.locked) {
+            $store.locked = -1;
+            return;
+          }
+
+          $store.lockedCoords = coords[index];
+          $store.locked = index;
         }
       }
     });
 
-    const ctx2 = document.getElementById('bar').getContext('2d');
+    const ctx2 = (document.getElementById('bar') as HTMLCanvasElement).getContext('2d');
     bar = new Chart(ctx2, {
       type: 'bar',
       data: {
@@ -118,16 +139,19 @@
     });
   });
 
-  function handleClick(evt: MouseEvent) {
-    const { index }: { element: PointElement; datasetIndex: number; index: number } =
-      myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true)[0];
-    if (index === $store.locked) {
-      $store.locked = -1;
-      return;
-    }
-    $store.lockedCoords = coords[index];
-    $store.locked = index;
-  }
+  // function handleClick(evt: MouseEvent) {
+  //   const { element, index }: { element: PointElement; datasetIndex: number; index: number } =
+  //     myChart.getElementsAtEventForMode(evt, 'nearest', { intersect: true }, true)[0];
+
+  //   // Unzoom
+  //   if (index === $store.locked) {
+  //     $store.locked = -1;
+  //     return;
+  //   }
+
+  //   $store.lockedCoords = coords[index];
+  //   $store.locked = index;
+  // }
 
   $: changeColor(myChart, $store.showingType);
 
@@ -155,7 +179,7 @@
   <ButtonGroup names={cellTypes} color="slate" bind:curr={$store.showingType} />
 
   <div class="mt-2 flex w-[50vw] max-w-[600px] flex-col">
-    <div class="relative"><canvas id="myChart" on:click={handleClick} /></div>
+    <div class="relative"><canvas id="myChart" /></div>
     <div class="relative"><canvas id="bar" /></div>
   </div>
 </section>
