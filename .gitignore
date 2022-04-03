@@ -1,3 +1,6 @@
+**.tif
+**.tiff
+visualize/static/**/*.json
 .vscode/
 **.RData
 **.rda
