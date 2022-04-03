@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { dev } from '$app/env';
+  import { browser, dev } from '$app/env';
   import { base } from '$app/paths';
   import Feature from 'ol/Feature.js';
   import { Circle } from 'ol/geom.js';
@@ -60,7 +60,7 @@
     })
   });
 
-  onMount(() => {
+  if (browser) {
     sourceTiff = new GeoTIFF({
       normalize: false,
       sources: dev
@@ -78,7 +78,9 @@
             }
           ]
     });
+  }
 
+  onMount(() => {
     layer = new TileLayer({
       style: {
         variables: getColorParams(showing, maxIntensity),
@@ -101,7 +103,7 @@
   });
 
   $: {
-    if ($store.locked !== -1 && map) {
+    if ($store.lockedIdx !== -1 && map) {
       let { x, y } = $store.lockedCoords;
       map.getView().animate({
         center: [x, y],
@@ -117,7 +119,7 @@
     layer.updateStyleVariables(getColorParams(showing, maxIntensity));
   }
 
-  $: if (map && $store.locked === -1) {
+  $: if (map && $store.lockedIdx === -1) {
     const { x, y } = $store.currCoords;
     map.getView().animate({
       center: [x, y],
@@ -128,7 +130,7 @@
   }
 </script>
 
-<div class="flex flex-col gap-y-6">
+<div class="flex flex-grow flex-col gap-y-6">
   <div class="flex flex-col">
     <ButtonGroup names={proteins} bind:curr={showing[0]} color="blue" />
     <ButtonGroup names={proteins} bind:curr={showing[1]} color="green" />
@@ -140,5 +142,6 @@
     <input type="range" min="0" max="254" bind:value={maxIntensity[1]} class="" />
     <input type="range" min="0" max="254" bind:value={maxIntensity[2]} class="" />
   </div>
-  <div id="map" class="h-[600px] w-[50vw] max-w-[600px]" />
+
+  <div id="map" class="h-[600px] max-w-[600px] shadow-lg" />
 </div>
