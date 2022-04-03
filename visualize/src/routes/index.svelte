@@ -15,8 +15,8 @@
 <main class="grid grid-cols-1 gap-x-2 md:grid-cols-2">
   {#await dataPromise then data}
     <Scatter {data} />
-    <Mapp {sample} />
   {/await}
+  <Mapp {sample} />
 </main>
 
 <style lang="postcss">
