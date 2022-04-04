@@ -28,7 +28,6 @@
 
   onMount(() => {
     const ctx = (document.getElementById('myChart') as HTMLCanvasElement).getContext('2d')!;
-    $store.showingType = cellTypes[0];
 
     myChart = new Chart(ctx, {
       type: 'scatter',
@@ -37,7 +36,7 @@
           {
             data: coords,
             // @ts-ignore
-            backgroundColor: getColor($store.showingType),
+            backgroundColor: getColor(showingType),
             normalized: true,
             pointRadius: 2.5,
             pointHoverRadius: 15,
@@ -95,4 +94,4 @@
 </script>
 
 <ButtonGroup names={cellTypes} color="slate" bind:curr={showingType} />
-<div class="relative"><canvas id="myChart" /></div>
+<div class="relative"><canvas class="" id="myChart" /></div>

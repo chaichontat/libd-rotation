@@ -12,12 +12,15 @@
   import { Stroke, Style } from 'ol/style.js';
   import { onMount } from 'svelte';
   import ButtonGroup from '../components/buttonGroup.svelte';
+  import type Data from '../fetcher';
   import { store } from '../store';
+
+  export let sample: string;
+  export let dataPromise: ReturnType<typeof Data>;
 
   let layer: TileLayer;
   let sourceTiff: GeoTIFF;
   let map: Map;
-  export let sample: string;
   let maxIntensity: [number, number, number] = [100, 100, 100]; // Inverted
   let showing: [Protein, Protein, Protein] = ['DAPI', 'TMEM119', 'Olig2'];
 
@@ -52,12 +55,7 @@
   const circleFeature = new Feature({ geometry: new Circle([14000, 6000], 130.75 / 2) });
   const vector = new VectorLayer({
     source: new VectorSource({ features: [circleFeature] }),
-    style: new Style({
-      stroke: new Stroke({
-        color: '#eeeeee',
-        width: 1
-      })
-    })
+    style: new Style({ stroke: new Stroke({ color: '#eeeeee', width: 1 }) })
   });
 
   if (browser) {
@@ -80,7 +78,22 @@
     });
   }
 
+  // All circles
+  const circlesLayer = new VectorLayer({
+    minZoom: 4,
+    source: new VectorSource({ features: [] }),
+    style: new Style({
+      stroke: new Stroke({ color: '#ffffff44', width: 1 })
+    })
+  });
+
   onMount(() => {
+    dataPromise
+      .then(({ coords }) =>
+        coords.map(({ x, y }) => new Feature({ geometry: new Circle([x, y], 130.75 / 2) }))
+      )
+      .then((c) => circlesLayer.getSource()!.addFeatures(c));
+
     layer = new TileLayer({
       style: {
         variables: getColorParams(showing, maxIntensity),
@@ -95,38 +108,32 @@
       source: sourceTiff
     });
 
-    map = new Map({ target: 'map', layers: [layer, vector], view: sourceTiff.getView() });
+    map = new Map({
+      target: 'map',
+      layers: [layer, vector, circlesLayer],
+      view: sourceTiff.getView()
+    });
 
     // map.on('pointermove', (e) => {
     // 	console.log(e.coordinate);
     // });
   });
 
-  $: {
-    if ($store.lockedIdx !== -1 && map) {
-      let { x, y } = $store.lockedCoords;
-      map.getView().animate({
-        center: [x, y],
-        duration: 100,
-        zoom: 5
-      });
+  $: if (layer) layer.updateStyleVariables(getColorParams(showing, maxIntensity));
 
+  $: {
+    if (map) {
+      let x, y;
+      if ($store.lockedIdx !== -1) {
+        // Locked
+        ({ x, y } = $store.lockedCoords);
+        map.getView().animate({ center: [x, y], duration: 100, zoom: 5 });
+      } else {
+        ({ x, y } = $store.currCoords);
+        map.getView().animate({ center: [x, y], duration: 100, zoom: 4.5 });
+      }
       circleFeature.getGeometry()?.setCenter([x, y]);
     }
-  }
-
-  $: if (layer) {
-    layer.updateStyleVariables(getColorParams(showing, maxIntensity));
-  }
-
-  $: if (map && $store.lockedIdx === -1) {
-    const { x, y } = $store.currCoords;
-    map.getView().animate({
-      center: [x, y],
-      zoom: 4,
-      duration: 100
-    });
-    circleFeature.getGeometry()?.setCenter([x, y]);
   }
 </script>
 
@@ -143,5 +150,18 @@
     <input type="range" min="0" max="254" bind:value={maxIntensity[2]} class="" />
   </div>
 
-  <div id="map" class="h-[600px] max-w-[600px] shadow-lg" />
+  <div id="map" class="relative h-[600px] max-w-[600px] shadow-lg">
+    <label
+      class="absolute right-4 top-4 z-50 inline-flex w-[15.5rem] rounded-lg bg-white/10 p-2 text-sm text-white/90 backdrop-blur-sm"
+    >
+      <input
+        type="checkbox"
+        class="mr-1 translate-y-1 "
+        on:change={(e) => {
+          if (map) circlesLayer.setVisible(e.currentTarget.checked);
+        }}
+      />
+      <span>Show all spots when zoomed in </span>
+    </label>
+  </div>
 </div>

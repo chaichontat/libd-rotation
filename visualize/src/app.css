@@ -1,4 +1,4 @@
-@import url(https://fonts.googleapis.com/css?family=Inter);
+@import url(https://rsms.me/inter/inter.css);
 @tailwind base;
 @layer base {
   html {

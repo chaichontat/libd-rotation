@@ -7,6 +7,8 @@
   const dataPromise = fetcher(sample);
 </script>
 
+<svelte:head><title>Visium IF</title></svelte:head>
+
 <h1 class="order-1 mb-2 text-3xl font-bold text-white sm:text-5xl sm:leading-none">
   Visium <span class="fancy">IF</span>
 </h1>
@@ -14,11 +16,11 @@
 
 <main class="flex flex-wrap gap-x-6 md:flex-nowrap">
   <Rna {dataPromise} />
-  <Mapp {sample} />
+  <Mapp {sample} {dataPromise} />
 </main>
 
 <style lang="postcss">
   .fancy {
-    @apply bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500  bg-clip-text text-transparent;
+    @apply bg-gradient-to-tl from-purple-500 via-purple-600 to-yellow-600  bg-clip-text font-extrabold text-transparent;
   }
 </style>
