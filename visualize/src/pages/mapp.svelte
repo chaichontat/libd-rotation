@@ -9,7 +9,7 @@
   import 'ol/ol.css';
   import { Vector as VectorSource } from 'ol/source.js';
   import GeoTIFF from 'ol/source/GeoTIFF.js';
-  import { Stroke, Style } from 'ol/style.js';
+  import { Fill, Stroke, Style } from 'ol/style.js';
   import { onMount } from 'svelte';
   import ButtonGroup from '../components/buttonGroup.svelte';
   import type Data from '../fetcher';
@@ -18,11 +18,15 @@
   export let sample: string;
   export let dataPromise: ReturnType<typeof Data>;
 
+  let coords: { x: number; y: number }[];
   let layer: TileLayer;
   let sourceTiff: GeoTIFF;
   let map: Map;
   let maxIntensity: [number, number, number] = [100, 100, 100]; // Inverted
   let showing: [Protein, Protein, Protein] = ['DAPI', 'TMEM119', 'Olig2'];
+
+  let curr = 0;
+  let donotmove = false; // Indicates that the move event comes from the map
 
   const mapping = {
     DAPI: 2,
@@ -55,7 +59,9 @@
   const circleFeature = new Feature({ geometry: new Circle([14000, 6000], 130.75 / 2) });
   const vector = new VectorLayer({
     source: new VectorSource({ features: [circleFeature] }),
-    style: new Style({ stroke: new Stroke({ color: '#eeeeee', width: 1 }) })
+    style: new Style({
+      stroke: new Stroke({ color: '#eeeeee', width: 1 })
+    })
   });
 
   if (browser) {
@@ -79,20 +85,30 @@
   }
 
   // All circles
+  const circlesStyle = new Style({
+    stroke: new Stroke({ color: '#ffffff55', width: 1 }),
+    fill: new Fill({ color: 'transparent' })
+  });
+  const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffffff', width: 1 }) });
+  const circlesSource = new VectorSource({ features: [] });
   const circlesLayer = new VectorLayer({
     minZoom: 4,
-    source: new VectorSource({ features: [] }),
-    style: new Style({
-      stroke: new Stroke({ color: '#ffffff44', width: 1 })
-    })
+    source: circlesSource,
+    style: circlesStyle
   });
 
   onMount(() => {
     dataPromise
-      .then(({ coords }) =>
-        coords.map(({ x, y }) => new Feature({ geometry: new Circle([x, y], 130.75 / 2) }))
-      )
-      .then((c) => circlesLayer.getSource()!.addFeatures(c));
+      .then(({ coords: c }) => {
+        coords = c;
+        return coords.map(({ x, y }, i) => {
+          const f = new Feature({ geometry: new Circle([x, y], 130.75 / 2) });
+          f.setId(i);
+          return f;
+        });
+      })
+      .then((c) => circlesSource.addFeatures(c))
+      .catch(console.error);
 
     layer = new TileLayer({
       style: {
@@ -110,29 +126,46 @@
 
     map = new Map({
       target: 'map',
-      layers: [layer, vector, circlesLayer],
+      layers: [layer, circlesLayer],
       view: sourceTiff.getView()
     });
 
-    // map.on('pointermove', (e) => {
-    // 	console.log(e.coordinate);
-    // });
+    map.on('pointermove', (e) => {
+      map.forEachFeatureAtPixel(e.pixel, (f) => {
+        $store.currIdx = f.getId() as number;
+        donotmove = true;
+        return true;
+      });
+    });
   });
 
+  // Highlight circle on hover.
+  $: if ($store.currIdx !== curr) {
+    circlesSource.getFeatureById(curr)?.setStyle(circlesStyle);
+    circlesSource.getFeatureById($store.currIdx)?.setStyle(selectStyle);
+    curr = $store.currIdx;
+  }
+
+  // Update "brightness"
   $: if (layer) layer.updateStyleVariables(getColorParams(showing, maxIntensity));
 
+  // Move view
   $: {
-    if (map) {
+    if (map && coords) {
       let x, y;
-      if ($store.lockedIdx !== -1) {
-        // Locked
-        ({ x, y } = $store.lockedCoords);
-        map.getView().animate({ center: [x, y], duration: 100, zoom: 5 });
+      if (donotmove) {
+        donotmove = false;
       } else {
-        ({ x, y } = $store.currCoords);
-        map.getView().animate({ center: [x, y], duration: 100, zoom: 4.5 });
+        if ($store.lockedIdx !== -1) {
+          // Locked
+          ({ x, y } = coords[$store.lockedIdx]);
+          map.getView().animate({ center: [x, y], duration: 200, zoom: 5 });
+        } else {
+          ({ x, y } = coords[$store.currIdx]);
+          map.getView().animate({ center: [x, y], duration: 200, zoom: 4.5 });
+        }
+        circleFeature.getGeometry()?.setCenter([x, y]);
       }
-      circleFeature.getGeometry()?.setCenter([x, y]);
     }
   }
 </script>
@@ -151,17 +184,18 @@
   </div>
 
   <div id="map" class="relative h-[600px] max-w-[600px] shadow-lg">
-    <label
+    <!-- <label
       class="absolute right-4 top-4 z-50 inline-flex w-[15.5rem] rounded-lg bg-white/10 p-2 text-sm text-white/90 backdrop-blur-sm"
     >
       <input
         type="checkbox"
         class="mr-1 translate-y-1 "
+        checked
         on:change={(e) => {
           if (map) circlesLayer.setVisible(e.currentTarget.checked);
         }}
       />
       <span>Show all spots when zoomed in </span>
-    </label>
+    </label> -->
   </div>
 </div>

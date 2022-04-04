@@ -29,9 +29,10 @@ export function preprocess(data: Record<string, number[]>) {
 }
 
 export async function fetchAll(sample: string) {
+  // Type not exactly correct. See `process`.
   const raw = await Promise.all(
     to_fetch.map(
-      (name): Promise<number[]> => fetch(`${s3_url}/${sample}/${name}.json`).then((r) => r.json())
+      (name) => fetch(`${s3_url}/${sample}/${name}.json`).then((r) => r.json()) as Promise<number[]>
     )
   );
   return preprocess(

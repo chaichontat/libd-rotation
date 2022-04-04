@@ -7,9 +7,9 @@
   export let d: Awaited<ReturnType<typeof DataPromise>>;
   const { byRow } = d;
 
-  let bar: Chart<'bar', number[], string>;
+  let bar: Chart<'bar', Record<string, number>, string>;
   onMount(() => {
-    const ctx2 = (document.getElementById('bar') as HTMLCanvasElement).getContext('2d');
+    const ctx2 = (document.getElementById('bar') as HTMLCanvasElement).getContext('2d')!;
     bar = new Chart(ctx2, {
       type: 'bar',
       data: {
@@ -24,7 +24,6 @@
       options: {
         scales: {
           x: {
-            color: 'white',
             grid: { borderColor: 'white' },
             ticks: { color: 'white' },
             position: 'top'
