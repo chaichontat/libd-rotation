@@ -6,14 +6,14 @@
     <link rel="icon" href="/libd-rotation/favicon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta http-equiv="content-security-policy" content="">
-	<link rel="stylesheet" href="/libd-rotation/_app/assets/pages/__layout.svelte-8ba38e02.css">
+	<link rel="stylesheet" href="/libd-rotation/_app/assets/pages/__layout.svelte-6815be7d.css">
 	<link rel="stylesheet" href="/libd-rotation/_app/assets/index-cfee8e6d.css">
-	<link rel="modulepreload" href="/libd-rotation/_app/start-dd2f9ac9.js">
+	<link rel="modulepreload" href="/libd-rotation/_app/start-bea12ea8.js">
 	<link rel="modulepreload" href="/libd-rotation/_app/chunks/index-459a7ae4.js">
 	<link rel="modulepreload" href="/libd-rotation/_app/chunks/index-6487d96d.js">
 	<link rel="modulepreload" href="/libd-rotation/_app/pages/__layout.svelte-a1ae227d.js">
-	<link rel="modulepreload" href="/libd-rotation/_app/pages/index.svelte-fd6add8b.js">
-	<link rel="modulepreload" href="/libd-rotation/_app/chunks/index-16b15f63.js">
+	<link rel="modulepreload" href="/libd-rotation/_app/pages/index.svelte-3774cf22.js">
+	<link rel="modulepreload" href="/libd-rotation/_app/chunks/index-058b325e.js">
   </head>
   <body>
     <div>
@@ -22,8 +22,10 @@
 <main class="m-8"><h1 class="order-1 mb-2 text-3xl font-bold text-white sm:text-5xl sm:leading-none">Visium <span class="fancy svelte-ul317a">IF</span></h1>
 <h3 class="mb-6 text-lg text-slate-100">Sample: Br6522_Ant_IF</h3>
 
-<main class="grid grid-cols-1 gap-x-2 md:grid-cols-2">
-  <div class="flex flex-col gap-y-6"><div class="flex flex-col"><div class="inline-flex flex-wrap rounded-md shadow-sm" role="group"><button class="border-blue-700/50 bg-blue-700 hover:bg-blue-600 button-base rounded-l-lg border">DAPI</button>
+<main class="flex flex-wrap gap-x-6 md:flex-nowrap"><section class="flex flex-grow flex-col gap-y-2"><div><p class="text-lg text-slate-100">Now showing: <span class="text-white">undefined</span></p></div>
+
+  <div class="mt-2 flex w-[50vw] max-w-[600px] flex-col"></div></section>
+  <div class="flex flex-grow flex-col gap-y-6"><div class="flex flex-col"><div class="inline-flex flex-wrap rounded-md shadow-sm" role="group"><button class="border-blue-700/50 bg-blue-700 hover:bg-blue-600 button-base rounded-l-lg border">DAPI</button>
 
   <button class="border-blue-700/50 bg-blue-900/50 hover:bg-blue-800 active:bg-blue-700 button-base border-t border-b border-r">TMEM119</button><button class="border-blue-700/50 bg-blue-900/50 hover:bg-blue-800 active:bg-blue-700 button-base border-t border-b border-r">Olig2</button><button class="border-blue-700/50 bg-blue-900/50 hover:bg-blue-800 active:bg-blue-700 button-base border-t border-b border-r">GFAP</button><button class="border-blue-700/50 bg-blue-900/50 hover:bg-blue-800 active:bg-blue-700 button-base border-t border-b border-r">NeuN</button><button class="border-blue-700/50 bg-blue-900/50 hover:bg-blue-800 active:bg-blue-700 button-base border-t border-b border-r">Lipofuschin</button>
 
@@ -42,14 +44,15 @@
   <div class="grid max-w-[600px] grid-cols-3 gap-x-4"><input type="range" min="0" max="254" class="" value="100">
     <input type="range" min="0" max="254" class="" value="100">
     <input type="range" min="0" max="254" class="" value="100"></div>
-  <div id="map" class="h-[600px] w-[50vw] max-w-[600px]"></div></div>
+
+  <div id="map" class="h-[600px] max-w-[600px] shadow-lg"></div></div>
 </main></main>
 
 
-		<script type="module" data-hydrate="iunfe3">
-		import { start } from "/libd-rotation/_app/start-dd2f9ac9.js";
+		<script type="module" data-hydrate="1tp24ql">
+		import { start } from "/libd-rotation/_app/start-bea12ea8.js";
 		start({
-			target: document.querySelector('[data-hydrate="iunfe3"]').parentNode,
+			target: document.querySelector('[data-hydrate="1tp24ql"]').parentNode,
 			paths: {"base":"/libd-rotation","assets":"/libd-rotation"},
 			session: {},
 			route: true,
@@ -60,7 +63,7 @@
 				error: null,
 				nodes: [
 					import("/libd-rotation/_app/pages/__layout.svelte-a1ae227d.js"),
-						import("/libd-rotation/_app/pages/index.svelte-fd6add8b.js")
+						import("/libd-rotation/_app/pages/index.svelte-3774cf22.js")
 				],
 				params: {},
 				routeId: ""
