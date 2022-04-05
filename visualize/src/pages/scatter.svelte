@@ -3,15 +3,15 @@
   import Chart, { type ChartEvent } from 'chart.js/auto/auto.js';
   import colormap from 'colormap';
   import { onMount } from 'svelte';
-  import type DataPromise from '../lib/fetcher';
-  import { process } from '../lib/fetcher';
+  import Data from '../lib/fetcher';
+  import { dataProcess } from '../lib/fetcher';
   import { store, currRna } from '../lib/store';
   import { genLRU } from '../lib/utils';
 
   let curr = 0;
-  export let d: Awaited<ReturnType<typeof DataPromise>>;
-  const { data, coords } = d;
-  const { idxs, maxs, cellTypes } = process(data);
+
+  const { data, coords } = Data;
+  const { idxs, maxs, cellTypes } = dataProcess(data);
   const colors = colormap({ colormap: 'viridis', nshades: 255, format: 'hex' });
 
   $currRna = cellTypes[0];

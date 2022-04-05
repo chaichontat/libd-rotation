@@ -24,12 +24,14 @@ const config = {
       // default options are shown
       pages: 'build',
       assets: 'build',
-      fallback: null
+      fallback: null,
+      compress: true
     }),
 
     prerender: {
       // This can be false if you're using a fallback (i.e. SPA mode)
-      default: true
+      default: true,
+      crawl: true
     },
     paths: {
       base: ci ? '/libd-rotation' : ''

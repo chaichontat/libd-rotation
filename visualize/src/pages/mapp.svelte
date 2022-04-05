@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser, dev } from '$app/env';
   import { base } from '$app/paths';
-  import { colorVarFactory, getWebGLCircles, getCanvasCircle } from '$src/lib/maplib';
+  import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/maplib';
   import { Zoom } from 'ol/control.js';
   import type { Point } from 'ol/geom';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
@@ -14,17 +14,17 @@
   import { Fill, Stroke, Style } from 'ol/style.js';
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
-  import type Data from '../lib/fetcher';
+  import Data from '../lib/fetcher';
   import { currRna, store } from '../lib/store';
 
   export let sample: string;
-  export let dataPromise: ReturnType<typeof Data>;
   export let proteinMap: { [key: string]: number };
 
   const proteins = Object.keys(proteinMap);
 
   const getColorParams = colorVarFactory(proteinMap);
-  let coords: { x: number; y: number }[];
+  const { coords, byRow } = Data;
+
   let layer: TileLayer;
   let sourceTiff: GeoTIFF;
   let map: Map;
@@ -91,14 +91,9 @@
   let { webGLSource, addData } = getWebGLCircles();
   let webGLLayer: WebGLPointsLayer<VectorSource<Point>>;
 
-  onMount(() => {
-    dataPromise
-      .then(({ coords: c, byRow }) => {
-        coords = c;
-        addData(c, byRow);
-      })
-      .catch(console.error);
+  addData(coords, byRow);
 
+  onMount(() => {
     webGLLayer = new WebGLPointsLayer({
       minZoom: 3,
       source: webGLSource,

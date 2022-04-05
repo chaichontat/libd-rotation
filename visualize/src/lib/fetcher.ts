@@ -1,28 +1,10 @@
-import { dev } from '$app/env';
+const jsons = import.meta.globEager(`../../static/Br6522_Ant_IF/*.json`);
 
-const s3_url = dev ? '/static/data' : 'https://chaichontat-host.s3.amazonaws.com/libd-rotation';
-
-const to_fetch = [
-  'Astro',
-  'Endo',
-  'Excit',
-  'Inhib',
-  'MSN.D1',
-  'MSN.D2',
-  'Macrophage',
-  'Micro',
-  'Mural',
-  'Neu',
-  'OPC',
-  'Oligo',
-  'Tcell',
-  'by_row',
-  'coords',
-  'GFAP',
-  'OLIG2',
-  'RBFOX3',
-  'TMEM119'
-];
+// Type not exactly correct. See `process`.
+const objs = Object.keys(jsons).reduce((acc, k) => {
+  const name = k.split('/').pop()!.split('.')[0];
+  return { ...acc, [name]: jsons[k].default as number[] };
+}, {} as Record<string, number[]>);
 
 export function preprocess(data: Record<string, number[]>) {
   const coords = data['coords'] as unknown as { x: number; y: number }[];
@@ -32,19 +14,20 @@ export function preprocess(data: Record<string, number[]>) {
   return { data, coords, byRow };
 }
 
-export async function fetchAll(sample: string) {
-  // Type not exactly correct. See `process`.
-  const raw = await Promise.all(
-    to_fetch.map(
-      (name) => fetch(`${s3_url}/${sample}/${name}.json`).then((r) => r.json()) as Promise<number[]>
-    )
-  );
-  return preprocess(
-    raw.reduce((acc, v, i) => ({ ...acc, [to_fetch[i]]: v }), {} as Record<string, number[]>)
-  );
-}
+// export function fetchAll() {
+//   // Type not exactly correct. See `process`.
+//   // const raw = await Promise.all(
+//   //   to_fetch.map(
+//   //     (name) => fetch(`${s3_url}/${sample}/${name}.json`).then((r) => r.json()) as Promise<number[]>
+//   //   )
+//   // );
+//   return;
+//   // return preprocess(
+//   //   raw.reduce((acc, v, i) => ({ ...acc, [to_fetch[i]]: v }), {} as Record<string, number[]>)
+//   // );
+// }
 
-export function process(data: Record<string, number[]>) {
+export function dataProcess(data: Record<string, number[]>) {
   const idxs: Record<string, number> = {};
   const maxs: number[] = [];
   const cellTypes: string[] = [];
@@ -57,4 +40,4 @@ export function process(data: Record<string, number[]>) {
   return { idxs, maxs, cellTypes };
 }
 
-export default fetchAll;
+export default preprocess(objs);

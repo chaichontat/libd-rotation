@@ -23,7 +23,6 @@ export function colorVarFactory(mapping: { [key: string]: number }) {
 }
 
 // WebGL;
-
 export function getWebGLCircles() {
   const webGLSource = new VectorSource({ features: [] });
 

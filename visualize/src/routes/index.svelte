@@ -1,10 +1,7 @@
 <script>
-  import fetcher from '../lib/fetcher';
   import Mapp from '../pages/mapp.svelte';
   import Rna from '../pages/rna.svelte';
-
   const sample = 'Br6522_Ant_IF';
-  const dataPromise = fetcher(sample);
 
   const proteinMap = {
     DAPI: 2,
@@ -25,8 +22,8 @@
 <h3 class="mb-6 text-lg text-slate-100">Sample: {sample}</h3>
 
 <main class="flex flex-wrap gap-x-6 md:flex-nowrap">
-  <Rna {dataPromise} />
-  <Mapp {sample} {dataPromise} {proteinMap} />
+  <Rna />
+  <Mapp {sample} {proteinMap} />
 </main>
 
 <style lang="postcss">
