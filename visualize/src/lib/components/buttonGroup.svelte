@@ -25,7 +25,7 @@
             : 'bg-red-900/50 hover:bg-red-800 active:bg-red-700'
         }`;
       case 'slate':
-        return `border-slate-700/50 ${
+        return `border-slate-500/50 ${
           active
             ? 'bg-slate-700 hover:bg-slate-700'
             : 'bg-slate-900/50 hover:bg-slate-800 active:bg-slate-700'
@@ -37,7 +37,7 @@
   }
 </script>
 
-<div class="inline-flex flex-wrap rounded-md shadow-sm" role="group">
+<div class="inline-flex flex-wrap rounded-md shadow-sm" id="group" role="group">
   <button
     on:click={() => (curr = names[0])}
     class={`${genClass(color, curr === names[0])} button-base rounded-l-lg border`}

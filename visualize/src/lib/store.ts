@@ -11,3 +11,5 @@ export const store: Writable<State> = writable({
   lockedIdx: { idx: -1, source: 'scatter' },
   currIdx: { idx: 0, source: 'scatter' }
 });
+
+export const currRna: Writable<string> = writable('');

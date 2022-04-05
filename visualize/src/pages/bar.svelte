@@ -1,11 +1,11 @@
 <script lang="ts">
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
-  import type DataPromise from '../lib/fetcher';
+  import Data from '../lib/fetcher';
   import { store } from '../lib/store';
 
-  export let d: Awaited<ReturnType<typeof DataPromise>>;
-  const { byRow } = d;
+  const { byRow } = Data;
+  Chart.defaults.font.size = 14;
 
   let bar: Chart<'bar', Record<string, number>, string>;
   onMount(() => {
