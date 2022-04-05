@@ -2,7 +2,7 @@
   import { browser, dev } from '$app/env';
   import { base } from '$app/paths';
   import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/maplib';
-  import { Zoom } from 'ol/control.js';
+  import { ScaleLine, Zoom } from 'ol/control.js';
   import type { Point } from 'ol/geom';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
   import TileLayer from 'ol/layer/WebGLTile.js';
@@ -11,7 +11,7 @@
   import GeoTIFF from 'ol/source/GeoTIFF.js';
   import type VectorSource from 'ol/source/Vector';
   import type { LiteralStyle } from 'ol/src/style/literal';
-  import { Fill, Stroke, Style } from 'ol/style.js';
+  import { Stroke, Style } from 'ol/style.js';
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import Data from '../lib/fetcher';
@@ -118,6 +118,12 @@
 
     map.removeControl(map.getControls().getArray()[0]);
     map.addControl(new Zoom({ delta: 0.4 }));
+    map.addControl(
+      new ScaleLine({
+        text: true,
+        minWidth: 140
+      })
+    );
 
     map.on('pointermove', (e) => {
       map.forEachFeatureAtPixel(e.pixel, (f) => {
@@ -269,6 +275,13 @@
 
   #map :global(.ol-zoomslider-thumb) {
     @apply w-3;
-    /* border-radius: 100%; */
+  }
+
+  #map :global(.ol-scale-line) {
+    @apply left-6 bottom-6 float-right w-3 bg-transparent text-right font-sans;
+  }
+
+  #map :global(.ol-scale-line-inner) {
+    @apply pb-1 text-sm;
   }
 </style>
