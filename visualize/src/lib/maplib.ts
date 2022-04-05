@@ -25,10 +25,10 @@ export function colorVarFactory(mapping: { [key: string]: number }) {
 // WebGL;
 
 export function getWebGLCircles() {
-  const circlesSource = new VectorSource({ features: [] });
+  const webGLSource = new VectorSource({ features: [] });
 
   const addData = (coords: { x: number; y: number }[], byRow: { [x: string]: number }[]) =>
-    circlesSource.addFeatures(
+    webGLSource.addFeatures(
       coords.map(({ x, y }, i) => {
         const f = new Feature({ geometry: new Point([x, y]), ...byRow[i] });
         f.setId(i);
@@ -36,26 +36,26 @@ export function getWebGLCircles() {
       })
     );
 
-  return { circlesSource, addData };
+  return { webGLSource, addData };
 }
 
-export function getCanvasCircles(style: Style) {
-  const circlesSource = new VectorSource({ features: [] });
-  const circlesLayer = new VectorLayer({
-    minZoom: 4,
-    source: circlesSource,
+export function getCanvasCircle(style: Style) {
+  const circleFeature = new Feature({ geometry: new Circle([0, 0], 130.75 / 2) });
+  const circleSource = new VectorSource({ features: [circleFeature] });
+  const circleLayer = new VectorLayer({
+    source: circleSource,
     style
   });
 
-  const addData = (coords: { x: number; y: number }[]) =>
-    circlesSource.addFeatures(
-      coords.map(({ x, y }, i) => {
-        const f = new Feature({ geometry: new Circle([x, y], 130.75 / 2) });
-        f.setId(i);
+  //   const addData = (coords: { x: number; y: number }[]) =>
+  //     circlesSource.addFeatures(
+  //       coords.map(({ x, y }, i) => {
+  //         const f = new Feature({ geometry: new Circle([x, y], 130.75 / 2) });
+  //         f.setId(i);
 
-        return f;
-      })
-    );
+  //         return f;
+  //       })
+  //     );
 
-  return { circlesSource, circlesLayer, addData };
+  return { circleFeature, circleSource, circleLayer };
 }

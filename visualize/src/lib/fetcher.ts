@@ -17,7 +17,11 @@ const to_fetch = [
   'Oligo',
   'Tcell',
   'by_row',
-  'coords'
+  'coords',
+  'GFAP',
+  'OLIG2',
+  'RBFOX3',
+  'TMEM119'
 ];
 
 export function preprocess(data: Record<string, number[]>) {

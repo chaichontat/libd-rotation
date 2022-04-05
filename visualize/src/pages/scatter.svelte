@@ -1,6 +1,6 @@
 <script lang="ts">
   import ButtonGroup from '$src/lib/components/buttonGroup.svelte';
-  import Chart, { type ActiveElement, type ChartEvent } from 'chart.js/auto/auto.js';
+  import Chart, { type ChartEvent } from 'chart.js/auto/auto.js';
   import colormap from 'colormap';
   import { onMount } from 'svelte';
   import type DataPromise from '../lib/fetcher';
@@ -17,11 +17,12 @@
   $currRna = cellTypes[0];
   let myChart: Chart<'scatter', { x: number; y: number }[], string>;
 
-  const min = coords.reduce(
-    (acc, { x, y }) => [Math.min(acc[0], x), Math.min(acc[1], y)],
-    [Infinity, Infinity]
-  );
-  const max = coords.reduce((acc, { x, y }) => [Math.max(acc[0], x), Math.max(acc[1], y)], [0, 0]);
+  const min = coords
+    .reduce((acc, { x, y }) => [Math.min(acc[0], x), Math.min(acc[1], y)], [Infinity, Infinity])
+    .map((x) => x - 100);
+  const max = coords
+    .reduce((acc, { x, y }) => [Math.max(acc[0], x), Math.max(acc[1], y)], [0, 0])
+    .map((x) => x + 100);
 
   const getColor = genLRU((name: string): string[] =>
     data[name].map((v) => colors[Math.round((v / 8) * 255)])
@@ -33,28 +34,6 @@
     chart.update();
   }
 
-  let fakeEvent = false;
-  function fakeHover(idx: number) {
-    if (!myChart) return;
-    console.log('hi');
-    const canvas = myChart.canvas;
-    const rect = canvas.getBoundingClientRect();
-    const { x, y } = myChart.getDatasetMeta(0).data[idx].getCenterPoint();
-
-    // myChart.setActiveElements([{ index: idx, datasetIndex: 0 }]);
-    // myChart.update();
-
-    const event = new MouseEvent('mousemove', {
-      clientX: rect.left + x, //376,
-      clientY: rect.top + y //409
-    });
-
-    console.log(event);
-
-    canvas.dispatchEvent(event);
-    fakeEvent = true;
-  }
-
   //   console.log(min);
   let anotherChart: Chart<'scatter', { x: number; y: number }[], string>;
   onMount(() => {
@@ -63,15 +42,16 @@
     anotherChart = new Chart(
       (document.getElementById('another') as HTMLCanvasElement).getContext('2d')!,
       {
+        type: 'scatter',
         data: {
           datasets: [
             {
-              type: 'scatter',
               data: coords.slice(0, 1),
-              //   backgroundColor: getColor(showingType)[0],
+              backgroundColor: getColor($currRna)[0],
               normalized: true,
               pointRadius: 25,
-              borderColor: '#eeeeee'
+              pointHoverRadius: 25,
+              borderColor: '#eeeeeedd'
             }
           ]
         },
@@ -91,6 +71,34 @@
           plugins: {
             legend: { display: false },
             tooltip: { enabled: false }
+          },
+          onHover: (evt: ChartEvent) => {
+            if (!myChart || !evt.native || $store.lockedIdx.idx !== -1) return;
+            const points = myChart.getElementsAtEventForMode(
+              evt.native,
+              'nearest',
+              { intersect: true },
+              true
+            );
+            if (points.length === 0 || points[0].index === curr) return;
+            $store.currIdx = { idx: points[0].index, source: 'scatter' };
+            curr = points[0].index;
+          },
+
+          onClick: (evt: ChartEvent) => {
+            if (!myChart) return;
+            if ($store.lockedIdx.idx !== -1 && evt.native) {
+              const points = myChart.getElementsAtEventForMode(
+                evt.native,
+                'nearest',
+                { intersect: true },
+                true
+              );
+              if (points.length === 0 || points[0].index === curr) return;
+              curr = points[0].index;
+              $store.currIdx = { idx: points[0].index, source: 'scatter' };
+            }
+            $store.lockedIdx.idx = $store.lockedIdx.idx === curr ? -1 : curr;
           }
         }
       }
@@ -128,14 +136,14 @@
         aspectRatio: 1,
         scales: {
           x: {
-            min: min[0] - 100,
-            max: max[0] + 100,
+            min: min[0],
+            max: max[0],
             grid: { display: false },
             ticks: { display: false }
           },
           y: {
-            min: min[1] - 100,
-            max: max[1] + 100,
+            min: min[1],
+            max: max[1],
             grid: { display: false },
             ticks: { display: false }
           }
@@ -143,23 +151,6 @@
         plugins: {
           legend: { display: false },
           tooltip: { enabled: false }
-        },
-        onHover: (evt: ChartEvent, activeElements: ActiveElement[]) => {
-          if (activeElements.length === 0 || activeElements[0]?.index === 0) return;
-          const idx = activeElements[0].index;
-          if (fakeEvent) fakeEvent = false;
-          if (curr === idx) return;
-          //   console.log($store.currIdx);
-          $store.currIdx = { idx, source: 'scatter' };
-          curr = idx;
-        },
-        onClick: (evt: ChartEvent, activeElements: ActiveElement[]) => {
-          if (activeElements.length === 0 || activeElements[0]?.index === 0) return;
-          const index = activeElements[0].index;
-          if (index === $store.lockedIdx.idx) {
-            $store.lockedIdx.idx = -1;
-            return;
-          }
         }
       }
     });
@@ -170,11 +161,10 @@
   // Change color for different markers.
   $: changeColor(myChart, $currRna);
 
-  $: if ($store.currIdx.source !== 'scatter') {
+  $: if (anotherChart) {
     anotherChart.data.datasets[0].data = [coords[$store.currIdx.idx]];
-    anotherChart.data.datasets[0].backgroundColor = getColor($currRna)[$store.currIdx.idx];
+    anotherChart.data.datasets[0].backgroundColor = getColor($currRna)[$store.currIdx.idx] + 'cc';
     anotherChart.update();
-    //   fakeHover($store.currIdx.idx);
   }
 </script>
 

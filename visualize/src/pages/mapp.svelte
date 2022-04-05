@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser, dev } from '$app/env';
   import { base } from '$app/paths';
-  import { colorVarFactory, getWebGLCircles } from '$src/lib/maplib';
+  import { colorVarFactory, getWebGLCircles, getCanvasCircle } from '$src/lib/maplib';
   import { Zoom } from 'ol/control.js';
   import type { Point } from 'ol/geom';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
@@ -57,11 +57,6 @@
     });
   }
 
-  const circlesStyle = new Style({
-    stroke: new Stroke({ color: '#ffffff55', width: 1 }),
-    fill: new Fill({ color: 'transparent' })
-  });
-
   const genStyle = (rna: string): LiteralStyle => ({
     variables: { opacity: 0.5 },
     symbol: {
@@ -86,10 +81,15 @@
     }
   });
 
+  const circleStyle = new Style({
+    stroke: new Stroke({ color: '#ffffff88', width: 1 }),
+    fill: new Fill({ color: 'transparent' })
+  });
+
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
-  // const { circlesSource, circlesLayer, addData } = getCanvasCircles(circlesStyle);
-  let { circlesSource, addData } = getWebGLCircles();
-  let circlesLayer: WebGLPointsLayer<VectorSource<Point>>;
+  const { circleFeature, circleSource, circleLayer } = getCanvasCircle(selectStyle);
+  let { webGLSource, addData } = getWebGLCircles();
+  let webGLLayer: WebGLPointsLayer<VectorSource<Point>>;
 
   onMount(() => {
     dataPromise
@@ -99,9 +99,9 @@
       })
       .catch(console.error);
 
-    circlesLayer = new WebGLPointsLayer({
+    webGLLayer = new WebGLPointsLayer({
       minZoom: 3,
-      source: circlesSource,
+      source: webGLSource,
       style: genStyle($currRna)
     });
 
@@ -121,7 +121,7 @@
 
     map = new Map({
       target: 'map',
-      layers: [layer, circlesLayer],
+      layers: [layer, webGLLayer, circleLayer],
       view: sourceTiff.getView()
     });
 
@@ -147,17 +147,17 @@
 
   // Update "brightness"
   $: if (layer) layer.updateStyleVariables(getColorParams(showing, maxIntensity));
-  $: if (circlesLayer) circlesLayer.updateStyleVariables({ opacity: colorOpacity });
+  $: if (webGLLayer) webGLLayer.updateStyleVariables({ opacity: colorOpacity });
 
-  $: if (circlesLayer) {
-    const previousLayer = circlesLayer;
-    circlesLayer = new WebGLPointsLayer({
+  $: if (webGLLayer) {
+    const previousLayer = webGLLayer;
+    webGLLayer = new WebGLPointsLayer({
       // minZoom: 3,
-      source: circlesSource,
+      source: webGLSource,
       style: genStyle($currRna)
     });
 
-    map.addLayer(circlesLayer);
+    map.addLayer(webGLLayer);
     map.removeLayer(previousLayer);
     previousLayer.dispose();
   }
@@ -171,7 +171,7 @@
         const { x, y } = coords[idx.idx];
         // map.getView().setCenter([x, y]);
         map.getView().animate({ center: [x, y], duration: 100, zoom });
-        // circlesSource.getFeatureById(idx)?.getGeometry()?.setCenter([x, y]);  Legacy for one circle.
+        circleFeature?.getGeometry()?.setCenter([x, y]);
       }
     }
   }
@@ -203,7 +203,7 @@
         class="mr-1 translate-y-1 "
         checked
         on:change={(e) => {
-          if (map) circlesLayer.setVisible(e.currentTarget.checked);
+          if (map) webGLLayer.setVisible(e.currentTarget.checked);
         }}
       />
       <span>Show all spots</span>
