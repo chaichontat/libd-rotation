@@ -1,3 +1,4 @@
+// Globs do not accept variable. Pass in real string.
 const jsons = import.meta.globEager(`../../static/Br6522_Ant_IF/*.json`);
 
 // Type not exactly correct. See `process`.

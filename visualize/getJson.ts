@@ -12,8 +12,6 @@ const to_fetch = [
   'Endo',
   'Excit',
   'Inhib',
-  'MSN.D1',
-  'MSN.D2',
   'Macrophage',
   'Micro',
   'Mural',
@@ -22,14 +20,18 @@ const to_fetch = [
   'Oligo',
   'Tcell',
   'by_row',
-  'coords'
+  'coords',
+  'OLIG2',
+  'Oligo',
+  'RBFOX3',
+  'TMEM119'
 ];
 
 const p = path.join(dir, sample);
 
 async function run() {
   await fs.mkdir(p, { recursive: true });
-  const raw = await Promise.all(
+  await Promise.all(
     to_fetch.map(async (name) => {
       const pa = path.join(p, `${name}.json`);
       try {
@@ -43,4 +45,4 @@ async function run() {
   );
 }
 
-run();
+await run();
