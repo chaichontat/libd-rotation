@@ -82,13 +82,8 @@
     }
   });
 
-  const circleStyle = new Style({
-    stroke: new Stroke({ color: '#ffffff88', width: 1 }),
-    fill: new Fill({ color: 'transparent' })
-  });
-
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
-  const { circleFeature, circleSource, circleLayer } = getCanvasCircle(selectStyle);
+  const { circleFeature, circleLayer } = getCanvasCircle(selectStyle);
   let { webGLSource, addData } = getWebGLCircles();
   let webGLLayer: WebGLPointsLayer<VectorSource<Point>>;
 
@@ -133,6 +128,20 @@
         return true;
       });
     });
+
+    map.on('click', (e) => {
+      console.log('hi');
+
+      map.forEachFeatureAtPixel(e.pixel, (f) => {
+        // console.log(f);
+
+        const idx = f.getId() as number | undefined;
+        if (!idx) return true;
+        $store.lockedIdx = { idx: idx === $store.lockedIdx.idx ? -1 : idx, source: 'scatter' }; // As if came from outside.
+        curr = idx;
+        return true;
+      });
+    });
   });
 
   // // Highlight circle on hover.
@@ -163,6 +172,8 @@
   // Move view
   $: {
     if (map) {
+      console.log($store.lockedIdx);
+
       const idx = $store.lockedIdx.idx !== -1 ? $store.lockedIdx : $store.currIdx;
       const { x, y } = coords[idx.idx];
       if ($store.currIdx.source !== 'map') {
@@ -186,12 +197,43 @@
       <!-- content here -->
       <div class="flex gap-x-4">
         <ButtonGroup names={proteins} bind:curr={showing[i]} {color} />
-        <input type="range" min="0" max="254" bind:value={maxIntensity[i]} class="" />
+        <input
+          type="range"
+          min="0"
+          max="254"
+          bind:value={maxIntensity[i]}
+          class="hidden 2xl:block"
+        />
       </div>
+    {/each}
+  </div>
+  <div class="flex w-full gap-x-8">
+    {#each [0, 1, 2] as i}
+      <input
+        type="range"
+        min="0"
+        max="254"
+        bind:value={maxIntensity[i]}
+        class="block w-full 2xl:hidden"
+      />
     {/each}
   </div>
 
   <div id="map" class="relative h-[70vh] shadow-lg">
+    <div
+      class="absolute left-14 top-[1.2rem] z-10 text-xl font-medium text-white opacity-90 xl:text-2xl"
+    >
+      Spots: {$currRna}
+    </div>
+    <div
+      class="absolute top-[4.75rem] left-3 z-10 flex flex-col text-xl font-medium text-white opacity-90 xl:text-2xl"
+    >
+      {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
+        {#if showing[i] !== 'None'}
+          <span class={`font-semibold ${color}`}>{showing[i]}</span>
+        {/if}
+      {/each}
+    </div>
     <label
       class="absolute right-4 top-4 z-50 inline-flex cursor-pointer flex-col gap-y-1 rounded-lg bg-neutral-600/70 p-2 px-3 text-sm text-white/90 backdrop-blur-sm transition-all hover:bg-neutral-600/90"
       ><div>
@@ -208,7 +250,7 @@
         max="1"
         step="0.01"
         bind:value={colorOpacity}
-        on:change={() => (showAllSpots = true)}
+        on:mousedown={() => (showAllSpots = true)}
         class="max-w-[36rem] cursor-pointer opacity-80"
       />
     </label>

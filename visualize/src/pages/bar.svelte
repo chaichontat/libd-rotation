@@ -5,6 +5,7 @@
   import { store } from '../lib/store';
 
   const { byRow } = Data;
+  Chart.defaults.font.size = 14;
 
   let bar: Chart<'bar', Record<string, number>, string>;
   onMount(() => {

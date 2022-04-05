@@ -37,8 +37,6 @@
   //   console.log(min);
   let anotherChart: Chart<'scatter', { x: number; y: number }[], string>;
   onMount(() => {
-    const ctx = (document.getElementById('myChart') as HTMLCanvasElement).getContext('2d')!;
-
     anotherChart = new Chart(
       (document.getElementById('another') as HTMLCanvasElement).getContext('2d')!,
       {
@@ -81,79 +79,86 @@
               true
             );
             if (points.length === 0 || points[0].index === curr) return;
-            $store.currIdx = { idx: points[0].index, source: 'scatter' };
             curr = points[0].index;
+            if ($store.lockedIdx.idx === -1) {
+              $store.currIdx = { idx: points[0].index, source: 'scatter' };
+            }
           },
 
           onClick: (evt: ChartEvent) => {
             if (!myChart) return;
-            if ($store.lockedIdx.idx !== -1 && evt.native) {
+            if (evt.native) {
               const points = myChart.getElementsAtEventForMode(
                 evt.native,
                 'nearest',
                 { intersect: true },
                 true
               );
-              if (points.length === 0 || points[0].index === curr) return;
+              if (points.length === 0) return;
+              // $store.currIdx = { idx: points[0].index, source: 'scatter' };
               curr = points[0].index;
-              $store.currIdx = { idx: points[0].index, source: 'scatter' };
             }
             $store.lockedIdx.idx = $store.lockedIdx.idx === curr ? -1 : curr;
+            $store.currIdx = { idx: curr, source: 'scatter' };
+            console.log($store.lockedIdx);
           }
         }
       }
     );
 
-    myChart = new Chart(ctx, {
-      data: {
-        datasets: [
-          //   {
-          //     type: 'scatter',
-          //     data: [{ x: 10000, y: 10000 }],
-          //     // @ts-ignore
-          //     backgroundColor: 'white',
-          //     normalized: true,
-          //     pointRadius: 25,
-          //     borderColor: '#eeeeee'
-          //   },
-          {
-            type: 'scatter',
-            data: coords,
-            // @ts-ignore
-            backgroundColor: getColor($currRna),
-            normalized: true,
-            pointRadius: 2.5,
-            pointHoverRadius: 20,
-            pointHoverBorderWidth: 1,
-            pointHoverBorderColor: '#eeeeee',
-            pointHitRadius: 3
-          }
-        ]
-      },
-      options: {
-        animation: false,
-        // responsive: false,
-        aspectRatio: 1,
-        scales: {
-          x: {
-            min: min[0],
-            max: max[0],
-            grid: { display: false },
-            ticks: { display: false }
-          },
-          y: {
-            min: min[1],
-            max: max[1],
-            grid: { display: false },
-            ticks: { display: false }
-          }
+    myChart = new Chart(
+      (document.getElementById('myChart') as HTMLCanvasElement).getContext('2d')!,
+      {
+        data: {
+          datasets: [
+            //   {
+            //     type: 'scatter',
+            //     data: [{ x: 10000, y: 10000 }],
+            //     // @ts-ignore
+            //     backgroundColor: 'white',
+            //     normalized: true,
+            //     pointRadius: 25,
+            //     borderColor: '#eeeeee'
+            //   },
+            {
+              type: 'scatter',
+              data: coords,
+              // @ts-ignore
+              backgroundColor: getColor($currRna),
+              normalized: true,
+              pointRadius: 2.5,
+              pointHoverRadius: 20,
+              pointHoverBorderWidth: 1,
+              pointHoverBorderColor: '#eeeeee',
+              pointHitRadius: 3
+            }
+          ]
         },
-        plugins: {
-          legend: { display: false },
-          tooltip: { enabled: false }
+        options: {
+          animation: false,
+          // responsive: false,
+          aspectRatio: 1,
+          scales: {
+            x: {
+              min: min[0],
+              max: max[0],
+              grid: { display: false },
+              ticks: { display: false }
+            },
+            y: {
+              min: min[1],
+              max: max[1],
+              grid: { display: false },
+              ticks: { display: false }
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+          }
         }
       }
-    });
+    );
   });
 
   //   $: if (myChart) console.log(myChart.data.datasets);
@@ -162,8 +167,9 @@
   $: changeColor(myChart, $currRna);
 
   $: if (anotherChart) {
-    anotherChart.data.datasets[0].data = [coords[$store.currIdx.idx]];
-    anotherChart.data.datasets[0].backgroundColor = getColor($currRna)[$store.currIdx.idx] + 'cc';
+    const idx = $store.lockedIdx.idx === -1 ? $store.currIdx.idx : $store.lockedIdx.idx;
+    anotherChart.data.datasets[0].data = [coords[idx]];
+    anotherChart.data.datasets[0].backgroundColor = getColor($currRna)[idx] + 'cc';
     anotherChart.update();
   }
 </script>
@@ -172,4 +178,9 @@
 <div class="relative">
   <canvas class="absolute" id="another" />
   <canvas class="" id="myChart" />
+  <!-- <div
+    class="absolute left-10 top-10 z-10 rounded-lg bg-white/10 px-3 py-1 text-lg font-medium text-white opacity-90 backdrop-blur-sm"
+  >
+    {$currRna}
+  </div> -->
 </div>
