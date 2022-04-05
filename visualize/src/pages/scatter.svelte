@@ -1,14 +1,14 @@
 <script lang="ts">
-  import Chart from 'chart.js/auto/auto.js';
-  import type { ActiveElement, ChartEvent } from 'chart.js/auto/auto.js';
-  import { store } from '../store';
-  import { onMount } from 'svelte';
+  import ButtonGroup from '$src/lib/components/buttonGroup.svelte';
+  import Chart, { type ActiveElement, type ChartEvent } from 'chart.js/auto/auto.js';
   import colormap from 'colormap';
-  import { genLRU } from '../utils';
-  import type DataPromise from '../fetcher';
-  import { process } from '../fetcher';
-  import ButtonGroup from '$src/components/buttonGroup.svelte';
+  import { onMount } from 'svelte';
+  import type DataPromise from '../lib/fetcher';
+  import { process } from '../lib/fetcher';
+  import { store } from '../lib/store';
+  import { genLRU } from '../lib/utils';
 
+  let curr = 0;
   export let d: Awaited<ReturnType<typeof DataPromise>>;
   const { data, coords } = d;
   const { idxs, maxs, cellTypes } = process(data);
@@ -33,7 +33,29 @@
     chart.update();
   }
 
-  console.log(min);
+  let fakeEvent = false;
+  function fakeHover(idx: number) {
+    if (!myChart) return;
+    console.log('hi');
+    const canvas = myChart.canvas;
+    const rect = canvas.getBoundingClientRect();
+    const { x, y } = myChart.getDatasetMeta(0).data[idx].getCenterPoint();
+
+    // myChart.setActiveElements([{ index: idx, datasetIndex: 0 }]);
+    // myChart.update();
+
+    const event = new MouseEvent('mousemove', {
+      clientX: rect.left + x, //376,
+      clientY: rect.top + y //409
+    });
+
+    console.log(event);
+
+    canvas.dispatchEvent(event);
+    fakeEvent = true;
+  }
+
+  //   console.log(min);
 
   onMount(() => {
     const ctx = (document.getElementById('myChart') as HTMLCanvasElement).getContext('2d')!;
@@ -41,26 +63,26 @@
     myChart = new Chart(ctx, {
       data: {
         datasets: [
-          {
-            type: 'scatter',
-            data: [{ x: 10000, y: 10000 }],
-            // @ts-ignore
-            backgroundColor: 'white',
-            normalized: true,
-            pointRadius: 25,
-            borderColor: '#eeeeee'
-          },
+          //   {
+          //     type: 'scatter',
+          //     data: [{ x: 10000, y: 10000 }],
+          //     // @ts-ignore
+          //     backgroundColor: 'white',
+          //     normalized: true,
+          //     pointRadius: 25,
+          //     borderColor: '#eeeeee'
+          //   },
           {
             type: 'scatter',
             data: coords,
             // @ts-ignore
             backgroundColor: getColor(showingType),
             normalized: true,
-
             pointRadius: 2.5,
             pointHoverRadius: 20,
             pointHoverBorderWidth: 1,
-            pointHoverBorderColor: '#eeeeee'
+            pointHoverBorderColor: '#eeeeee',
+            pointHitRadius: 3
           }
         ]
       },
@@ -79,49 +101,36 @@
         },
         plugins: {
           legend: { display: false },
-          tooltip: {
-            enabled: false
-            // events: ['mousemove', 'mouseout', 'touchstart', 'touchmove']
-            // callbacks: {
-            //   label: (tooltipItem: TooltipItem<'scatter'>) => {
-            //     $store.currIdx = tooltipItem.dataIndex;
-            //     return tooltipItem.dataIndex.toString();
-            //   }
-            // }
-          }
+          tooltip: { enabled: false }
         },
         onHover: (evt: ChartEvent, activeElements: ActiveElement[]) => {
           if (activeElements.length === 0 || activeElements[0]?.index === 0) return;
+          const idx = activeElements[0].index;
+          if (fakeEvent) fakeEvent = false;
+          if (curr === idx) return;
           //   console.log($store.currIdx);
-          $store.currIdx = activeElements[0].index;
+          $store.currIdx = { idx, source: 'scatter' };
+          curr = idx;
         },
         onClick: (evt: ChartEvent, activeElements: ActiveElement[]) => {
           if (activeElements.length === 0 || activeElements[0]?.index === 0) return;
           const index = activeElements[0].index;
-          //   activeElements[0].element.options.radius = 100;
-          //   myChart.update();
-
-          if (index === $store.lockedIdx) {
-            $store.lockedIdx = -1;
+          if (index === $store.lockedIdx.idx) {
+            $store.lockedIdx.idx = -1;
             return;
           }
-
-          $store.lockedIdx = index;
         }
       }
     });
   });
-  $: if (myChart) console.log(myChart.data.datasets);
 
+  //   $: if (myChart) console.log(myChart.data.datasets);
+
+  // Change color for different markers.
   $: changeColor(myChart, showingType);
 
-  //   $: if (myChart && $store.currIdx !== 0) {
-  //     // console.log($store.currIdx);
-
-  //     // $store.currIdx;
-  //     // myChart.data.datasets[0].data.pop();
-  //     myChart.data.datasets[0].data[0] = coords[$store.currIdx];
-  //     myChart.update();
+  //   $: if ($store.currIdx.source !== 'scatter') {
+  //     fakeHover($store.currIdx.idx);
   //   }
 </script>
 

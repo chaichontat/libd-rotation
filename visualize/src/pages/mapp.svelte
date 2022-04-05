@@ -1,6 +1,8 @@
 <script lang="ts">
   import { browser, dev } from '$app/env';
   import { base } from '$app/paths';
+  import { colorVarFactory } from '$src/lib/maplib';
+  import { Zoom } from 'ol/control.js';
   import Feature from 'ol/Feature.js';
   import { Circle } from 'ol/geom.js';
   import { Vector as VectorLayer } from 'ol/layer.js';
@@ -11,58 +13,27 @@
   import GeoTIFF from 'ol/source/GeoTIFF.js';
   import { Fill, Stroke, Style } from 'ol/style.js';
   import { onMount } from 'svelte';
-  import ButtonGroup from '../components/buttonGroup.svelte';
-  import type Data from '../fetcher';
-  import { store } from '../store';
+  import ButtonGroup from '../lib/components/buttonGroup.svelte';
+  import type Data from '../lib/fetcher';
+  import { store } from '../lib/store';
 
   export let sample: string;
   export let dataPromise: ReturnType<typeof Data>;
+  export let proteinMap: { [key: string]: number };
 
+  const proteins = Object.keys(proteinMap);
+
+  const getColorParams = colorVarFactory(proteinMap);
   let coords: { x: number; y: number }[];
   let layer: TileLayer;
   let sourceTiff: GeoTIFF;
   let map: Map;
+
   let maxIntensity: [number, number, number] = [100, 100, 100]; // Inverted
-  let showing: [Protein, Protein, Protein] = ['DAPI', 'TMEM119', 'Olig2'];
+  let showing = proteins.slice(0, 3) as [string, string, string];
 
   let curr = 0;
-  let donotmove = false; // Indicates that the move event comes from the map
-
-  const mapping = {
-    DAPI: 2,
-    TMEM119: 6,
-    Olig2: 5,
-    GFAP: 3,
-    NeuN: 4,
-    Lipofuschin: 1,
-    None: 7
-  };
-  type Protein = keyof typeof mapping;
-  const proteins = Object.keys(mapping) as Protein[];
-
-  function getColorParams(showing: [Protein, Protein, Protein], max: [number, number, number]) {
-    const len = proteins.length - 1;
-    const variables = {
-      blue: Math.min(mapping[showing[0]], len),
-      green: Math.min(mapping[showing[1]], len),
-      red: Math.min(mapping[showing[2]], len),
-      blueMax: 255 - max[0],
-      greenMax: 255 - max[1],
-      redMax: 255 - max[2],
-      blueMask: mapping[showing[0]] > len ? 0 : 1,
-      greenMask: mapping[showing[1]] > len ? 0 : 1,
-      redMask: mapping[showing[2]] > len ? 0 : 1
-    };
-    return variables;
-  }
-
-  const circleFeature = new Feature({ geometry: new Circle([14000, 6000], 130.75 / 2) });
-  const vector = new VectorLayer({
-    source: new VectorSource({ features: [circleFeature] }),
-    style: new Style({
-      stroke: new Stroke({ color: '#eeeeee', width: 1 })
-    })
-  });
+  // let donotmove = false; // Indicates that the move event comes from the map
 
   if (browser) {
     sourceTiff = new GeoTIFF({
@@ -84,12 +55,12 @@
     });
   }
 
-  // All circles
   const circlesStyle = new Style({
     stroke: new Stroke({ color: '#ffffff55', width: 1 }),
     fill: new Fill({ color: 'transparent' })
   });
-  const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffffff', width: 1 }) });
+
+  const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
   const circlesSource = new VectorSource({ features: [] });
   const circlesLayer = new VectorLayer({
     minZoom: 4,
@@ -101,13 +72,13 @@
     dataPromise
       .then(({ coords: c }) => {
         coords = c;
-        return coords.map(({ x, y }, i) => {
+        const circ = coords.map(({ x, y }, i) => {
           const f = new Feature({ geometry: new Circle([x, y], 130.75 / 2) });
           f.setId(i);
           return f;
         });
+        circlesSource.addFeatures(circ);
       })
-      .then((c) => circlesSource.addFeatures(c))
       .catch(console.error);
 
     layer = new TileLayer({
@@ -130,20 +101,24 @@
       view: sourceTiff.getView()
     });
 
+    map.removeControl(map.getControls().getArray()[0]);
+    map.addControl(new Zoom({ delta: 0.4 }));
+
     map.on('pointermove', (e) => {
       map.forEachFeatureAtPixel(e.pixel, (f) => {
-        $store.currIdx = f.getId() as number;
-        donotmove = true;
+        const idx = f.getId() as number;
+        if (idx === curr) return true;
+        $store.currIdx = { idx, source: 'map' }; // As if came from outside.
         return true;
       });
     });
   });
 
   // Highlight circle on hover.
-  $: if ($store.currIdx !== curr) {
+  $: if ($store.currIdx.idx !== curr) {
     circlesSource.getFeatureById(curr)?.setStyle(circlesStyle);
-    circlesSource.getFeatureById($store.currIdx)?.setStyle(selectStyle);
-    curr = $store.currIdx;
+    circlesSource.getFeatureById($store.currIdx.idx)?.setStyle(selectStyle);
+    curr = $store.currIdx.idx;
   }
 
   // Update "brightness"
@@ -152,22 +127,19 @@
   // Move view
   $: {
     if (map && coords) {
-      let x, y;
-      if (donotmove) {
-        donotmove = false;
-      } else {
-        if ($store.lockedIdx !== -1) {
-          // Locked
-          ({ x, y } = coords[$store.lockedIdx]);
-          map.getView().animate({ center: [x, y], duration: 200, zoom: 5 });
-        } else {
-          ({ x, y } = coords[$store.currIdx]);
-          map.getView().animate({ center: [x, y], duration: 200, zoom: 4.5 });
-        }
-        circleFeature.getGeometry()?.setCenter([x, y]);
+      if ($store.currIdx.source !== 'map') {
+        const idx = $store.lockedIdx.idx !== -1 ? $store.lockedIdx : $store.currIdx;
+        const zoom = $store.lockedIdx.idx !== -1 ? 5 : 4.5;
+        const { x, y } = coords[idx.idx];
+        // map.getView().setCenter([x, y]);
+        map.getView().animate({ center: [x, y], duration: 100, zoom });
+        // circlesSource.getFeatureById(idx)?.getGeometry()?.setCenter([x, y]);  Legacy for one circle.
       }
     }
   }
+  $: console.log($store.currIdx);
+
+  // $: console.log(map?.getControls());
 </script>
 
 <div class="flex flex-grow flex-col gap-y-6">
@@ -183,7 +155,7 @@
     <input type="range" min="0" max="254" bind:value={maxIntensity[2]} class="" />
   </div>
 
-  <div id="map" class="relative h-[600px] max-w-[600px] shadow-lg">
+  <div id="map" class="relative h-[70vh] shadow-lg">
     <!-- <label
       class="absolute right-4 top-4 z-50 inline-flex w-[15.5rem] rounded-lg bg-white/10 p-2 text-sm text-white/90 backdrop-blur-sm"
     >
@@ -198,4 +170,20 @@
       <span>Show all spots when zoomed in </span>
     </label> -->
   </div>
+  "ol-zoom-in"
 </div>
+
+<style lang="postcss">
+  #map :global(.ol-zoomslider) {
+    @apply cursor-pointer rounded bg-neutral-500/50 backdrop-blur transition-all;
+  }
+
+  #map :global(.ol-zoomslider:hover) {
+    @apply bg-white/50;
+  }
+
+  #map :global(.ol-zoomslider-thumb) {
+    @apply w-3;
+    /* border-radius: 100%; */
+  }
+</style>

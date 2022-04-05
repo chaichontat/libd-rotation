@@ -1,10 +1,20 @@
 <script>
+  import fetcher from '../lib/fetcher';
   import Mapp from '../pages/mapp.svelte';
   import Rna from '../pages/rna.svelte';
-  import fetcher from '../fetcher';
 
   const sample = 'Br6522_Ant_IF';
   const dataPromise = fetcher(sample);
+
+  const proteinMap = {
+    DAPI: 2,
+    TMEM119: 6,
+    Olig2: 5,
+    GFAP: 3,
+    NeuN: 4,
+    Lipofuschin: 1,
+    None: 7
+  };
 </script>
 
 <svelte:head><title>Visium IF</title></svelte:head>
@@ -16,7 +26,7 @@
 
 <main class="flex flex-wrap gap-x-6 md:flex-nowrap">
   <Rna {dataPromise} />
-  <Mapp {sample} {dataPromise} />
+  <Mapp {sample} {dataPromise} {proteinMap} />
 </main>
 
 <style lang="postcss">

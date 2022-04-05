@@ -1,7 +1,7 @@
 <script lang="ts">
-  import type Data from '../fetcher';
-  import Scatter from './scatter.svelte';
+  import type Data from '../lib/fetcher';
   import Bar from './bar.svelte';
+  import Scatter from './scatter.svelte';
 
   export let dataPromise: ReturnType<typeof Data>;
 </script>

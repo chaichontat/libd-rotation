@@ -1,16 +1,16 @@
 <script lang="ts">
   import Chart from 'chart.js/auto/auto.js';
-  import { store } from '../store';
   import { onMount } from 'svelte';
-  import type DataPromise from '../fetcher';
+  import type DataPromise from '../lib/fetcher';
+  import { store } from '../lib/store';
 
   export let d: Awaited<ReturnType<typeof DataPromise>>;
   const { byRow } = d;
 
   let bar: Chart<'bar', Record<string, number>, string>;
   onMount(() => {
-    const ctx2 = (document.getElementById('bar') as HTMLCanvasElement).getContext('2d')!;
-    bar = new Chart(ctx2, {
+    const ctx = (document.getElementById('bar') as HTMLCanvasElement).getContext('2d')!;
+    bar = new Chart(ctx, {
       type: 'bar',
       data: {
         datasets: [
@@ -47,11 +47,11 @@
 
   $: {
     if (bar) {
-      if ($store.lockedIdx !== -1) {
+      if ($store.lockedIdx.idx !== -1) {
         // Locked
-        bar.data.datasets[0].data = byRow[$store.lockedIdx];
+        bar.data.datasets[0].data = byRow[$store.lockedIdx.idx];
       } else {
-        bar.data.datasets[0].data = byRow[$store.currIdx];
+        bar.data.datasets[0].data = byRow[$store.currIdx.idx];
       }
       bar.update();
     }
