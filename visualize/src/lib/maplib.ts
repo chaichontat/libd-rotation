@@ -1,5 +1,8 @@
-import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
+import Feature from 'ol/Feature.js';
+import { Circle, Point } from 'ol/geom.js';
+import { Vector as VectorLayer } from 'ol/layer.js';
 import VectorSource from 'ol/source/Vector.js';
+import type { Style } from 'ol/style.js';
 
 export function colorVarFactory(mapping: { [key: string]: number }) {
   const len = Object.keys(mapping).length - 1;
@@ -22,25 +25,37 @@ export function colorVarFactory(mapping: { [key: string]: number }) {
 // WebGL;
 
 export function getWebGLCircles() {
-  const webglstyle = {
-    symbol: {
-      symbolType: 'circle',
-      size: ['interpolate', ['exponential', 5], ['zoom'], 1, 2, 5, 130.75],
-      color: '#ffffff20',
-      opacity: 0.95
-    }
-  };
   const circlesSource = new VectorSource({ features: [] });
-  const circlesLayer = new WebGLPointsLayer({
+
+  const addData = (coords: { x: number; y: number }[], byRow: { [x: string]: number }[]) =>
+    circlesSource.addFeatures(
+      coords.map(({ x, y }, i) => {
+        const f = new Feature({ geometry: new Point([x, y]), ...byRow[i] });
+        f.setId(i);
+        return f;
+      })
+    );
+
+  return { circlesSource, addData };
+}
+
+export function getCanvasCircles(style: Style) {
+  const circlesSource = new VectorSource({ features: [] });
+  const circlesLayer = new VectorLayer({
     minZoom: 4,
     source: circlesSource,
-    style: webglstyle
+    style
   });
 
-  //   const points = coords.map(({ x, y }, i) => {
-  //     const f = new Feature({ geometry: new Point([x, y]), style: circlesStyle });
-  //     f.setId(i);
-  //     return f;
-  //   });
-  return { circlesSource, circlesLayer };
+  const addData = (coords: { x: number; y: number }[]) =>
+    circlesSource.addFeatures(
+      coords.map(({ x, y }, i) => {
+        const f = new Feature({ geometry: new Circle([x, y], 130.75 / 2) });
+        f.setId(i);
+
+        return f;
+      })
+    );
+
+  return { circlesSource, circlesLayer, addData };
 }

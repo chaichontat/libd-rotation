@@ -5,7 +5,7 @@
   import { onMount } from 'svelte';
   import type DataPromise from '../lib/fetcher';
   import { process } from '../lib/fetcher';
-  import { store } from '../lib/store';
+  import { store, currRna } from '../lib/store';
   import { genLRU } from '../lib/utils';
 
   let curr = 0;
@@ -14,7 +14,7 @@
   const { idxs, maxs, cellTypes } = process(data);
   const colors = colormap({ colormap: 'viridis', nshades: 255, format: 'hex' });
 
-  let showingType = cellTypes[0];
+  $currRna = cellTypes[0];
   let myChart: Chart<'scatter', { x: number; y: number }[], string>;
 
   const min = coords.reduce(
@@ -24,7 +24,7 @@
   const max = coords.reduce((acc, { x, y }) => [Math.max(acc[0], x), Math.max(acc[1], y)], [0, 0]);
 
   const getColor = genLRU((name: string): string[] =>
-    data[name].map((v) => colors[Math.round((v / maxs[idxs[name]]) * 255)])
+    data[name].map((v) => colors[Math.round((v / 8) * 255)])
   );
 
   function changeColor(chart: Chart, name: string): void {
@@ -112,7 +112,7 @@
             type: 'scatter',
             data: coords,
             // @ts-ignore
-            backgroundColor: getColor(showingType),
+            backgroundColor: getColor($currRna),
             normalized: true,
             pointRadius: 2.5,
             pointHoverRadius: 20,
@@ -128,12 +128,17 @@
         aspectRatio: 1,
         scales: {
           x: {
-            min: min[0],
-            max: max[0],
+            min: min[0] - 100,
+            max: max[0] + 100,
             grid: { display: false },
             ticks: { display: false }
           },
-          y: { min: min[1], max: max[1], grid: { display: false }, ticks: { display: false } }
+          y: {
+            min: min[1] - 100,
+            max: max[1] + 100,
+            grid: { display: false },
+            ticks: { display: false }
+          }
         },
         plugins: {
           legend: { display: false },
@@ -163,17 +168,17 @@
   //   $: if (myChart) console.log(myChart.data.datasets);
 
   // Change color for different markers.
-  $: changeColor(myChart, showingType);
+  $: changeColor(myChart, $currRna);
 
   $: if ($store.currIdx.source !== 'scatter') {
     anotherChart.data.datasets[0].data = [coords[$store.currIdx.idx]];
-    anotherChart.data.datasets[0].backgroundColor = getColor(showingType)[$store.currIdx.idx];
+    anotherChart.data.datasets[0].backgroundColor = getColor($currRna)[$store.currIdx.idx];
     anotherChart.update();
     //   fakeHover($store.currIdx.idx);
   }
 </script>
 
-<ButtonGroup names={cellTypes} color="slate" bind:curr={showingType} />
+<ButtonGroup names={cellTypes} color="slate" bind:curr={$currRna} />
 <div class="relative">
   <canvas class="absolute" id="another" />
   <canvas class="" id="myChart" />

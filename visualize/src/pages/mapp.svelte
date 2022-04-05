@@ -1,21 +1,21 @@
 <script lang="ts">
   import { browser, dev } from '$app/env';
   import { base } from '$app/paths';
-  import { colorVarFactory } from '$src/lib/maplib';
+  import { colorVarFactory, getWebGLCircles } from '$src/lib/maplib';
   import { Zoom } from 'ol/control.js';
-  import Feature from 'ol/Feature.js';
-  import { Circle } from 'ol/geom.js';
-  import { Vector as VectorLayer } from 'ol/layer.js';
+  import type { Point } from 'ol/geom';
+  import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
   import TileLayer from 'ol/layer/WebGLTile.js';
   import Map from 'ol/Map.js';
   import 'ol/ol.css';
-  import { Vector as VectorSource } from 'ol/source.js';
   import GeoTIFF from 'ol/source/GeoTIFF.js';
+  import type VectorSource from 'ol/source/Vector';
+  import type { LiteralStyle } from 'ol/src/style/literal';
   import { Fill, Stroke, Style } from 'ol/style.js';
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import type Data from '../lib/fetcher';
-  import { store } from '../lib/store';
+  import { currRna, store } from '../lib/store';
 
   export let sample: string;
   export let dataPromise: ReturnType<typeof Data>;
@@ -28,6 +28,8 @@
   let layer: TileLayer;
   let sourceTiff: GeoTIFF;
   let map: Map;
+
+  let colorOpacity = 0.8;
 
   let maxIntensity: [number, number, number] = [100, 100, 100]; // Inverted
   let showing = proteins.slice(0, 3) as [string, string, string];
@@ -60,26 +62,48 @@
     fill: new Fill({ color: 'transparent' })
   });
 
-  const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
-  const circlesSource = new VectorSource({ features: [] });
-  const circlesLayer = new VectorLayer({
-    minZoom: 4,
-    source: circlesSource,
-    style: circlesStyle
+  const genStyle = (rna: string): LiteralStyle => ({
+    variables: { opacity: 0.5 },
+    symbol: {
+      symbolType: 'circle',
+      size: [
+        'interpolate',
+        ['exponential', 2],
+        ['zoom'],
+        1,
+        4.0625,
+        2,
+        8.175,
+        3,
+        16.34,
+        4,
+        32.6875,
+        5,
+        130.75
+      ],
+      color: ['interpolate', ['linear'], ['get', rna], 0, '#3e0e51', 4, '#428e8c', 8, '#fce652'],
+      opacity: ['var', 'opacity']
+    }
   });
+
+  const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
+  // const { circlesSource, circlesLayer, addData } = getCanvasCircles(circlesStyle);
+  let { circlesSource, addData } = getWebGLCircles();
+  let circlesLayer: WebGLPointsLayer<VectorSource<Point>>;
 
   onMount(() => {
     dataPromise
-      .then(({ coords: c }) => {
+      .then(({ coords: c, byRow }) => {
         coords = c;
-        const circ = coords.map(({ x, y }, i) => {
-          const f = new Feature({ geometry: new Circle([x, y], 130.75 / 2) });
-          f.setId(i);
-          return f;
-        });
-        circlesSource.addFeatures(circ);
+        addData(c, byRow);
       })
       .catch(console.error);
+
+    circlesLayer = new WebGLPointsLayer({
+      minZoom: 3,
+      source: circlesSource,
+      style: genStyle($currRna)
+    });
 
     layer = new TileLayer({
       style: {
@@ -114,15 +138,29 @@
     });
   });
 
-  // Highlight circle on hover.
-  $: if ($store.currIdx.idx !== curr) {
-    circlesSource.getFeatureById(curr)?.setStyle(circlesStyle);
-    circlesSource.getFeatureById($store.currIdx.idx)?.setStyle(selectStyle);
-    curr = $store.currIdx.idx;
-  }
+  // // Highlight circle on hover.
+  // $: if ($store.currIdx.idx !== curr) {
+  //   circlesSource.getFeatureById(curr)?.setStyle(circlesStyle);
+  //   circlesSource.getFeatureById($store.currIdx.idx)?.setStyle(selectStyle);
+  //   curr = $store.currIdx.idx;
+  // }
 
   // Update "brightness"
   $: if (layer) layer.updateStyleVariables(getColorParams(showing, maxIntensity));
+  $: if (circlesLayer) circlesLayer.updateStyleVariables({ opacity: colorOpacity });
+
+  $: if (circlesLayer) {
+    const previousLayer = circlesLayer;
+    circlesLayer = new WebGLPointsLayer({
+      // minZoom: 3,
+      source: circlesSource,
+      style: genStyle($currRna)
+    });
+
+    map.addLayer(circlesLayer);
+    map.removeLayer(previousLayer);
+    previousLayer.dispose();
+  }
 
   // Move view
   $: {
@@ -137,7 +175,7 @@
       }
     }
   }
-  $: console.log($store.currIdx);
+  // $: console.log($store.currIdx);
 
   // $: console.log(map?.getControls());
 </script>
@@ -154,10 +192,11 @@
     <input type="range" min="0" max="254" bind:value={maxIntensity[1]} class="" />
     <input type="range" min="0" max="254" bind:value={maxIntensity[2]} class="" />
   </div>
+  <input type="range" min="0" max="1" step="0.01" bind:value={colorOpacity} class="" />
 
   <div id="map" class="relative h-[70vh] shadow-lg">
-    <!-- <label
-      class="absolute right-4 top-4 z-50 inline-flex w-[15.5rem] rounded-lg bg-white/10 p-2 text-sm text-white/90 backdrop-blur-sm"
+    <label
+      class="absolute right-4 top-4 z-50 inline-flex cursor-pointer rounded-lg bg-white/10 p-2 px-3 text-sm text-white/90 backdrop-blur-sm transition-all hover:bg-white/20"
     >
       <input
         type="checkbox"
@@ -167,8 +206,8 @@
           if (map) circlesLayer.setVisible(e.currentTarget.checked);
         }}
       />
-      <span>Show all spots when zoomed in </span>
-    </label> -->
+      <span>Show all spots</span>
+    </label>
   </div>
   "ol-zoom-in"
 </div>
