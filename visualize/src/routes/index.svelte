@@ -22,8 +22,8 @@
 <h3 class="mb-6 text-lg text-slate-100">Sample: {sample}</h3>
 
 <main class="flex flex-wrap gap-x-6 md:flex-nowrap">
-  <Rna />
   <Mapp {sample} {proteinMap} />
+  <Rna />
 </main>
 
 <style lang="postcss">
