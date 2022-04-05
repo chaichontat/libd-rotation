@@ -56,9 +56,45 @@
   }
 
   //   console.log(min);
-
+  let anotherChart: Chart<'scatter', { x: number; y: number }[], string>;
   onMount(() => {
     const ctx = (document.getElementById('myChart') as HTMLCanvasElement).getContext('2d')!;
+
+    anotherChart = new Chart(
+      (document.getElementById('another') as HTMLCanvasElement).getContext('2d')!,
+      {
+        data: {
+          datasets: [
+            {
+              type: 'scatter',
+              data: coords.slice(0, 1),
+              //   backgroundColor: getColor(showingType)[0],
+              normalized: true,
+              pointRadius: 25,
+              borderColor: '#eeeeee'
+            }
+          ]
+        },
+        options: {
+          animation: false,
+          // responsive: false,
+          aspectRatio: 1,
+          scales: {
+            x: {
+              min: min[0],
+              max: max[0],
+              grid: { display: false },
+              ticks: { display: false }
+            },
+            y: { min: min[1], max: max[1], grid: { display: false }, ticks: { display: false } }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false }
+          }
+        }
+      }
+    );
 
     myChart = new Chart(ctx, {
       data: {
@@ -129,10 +165,16 @@
   // Change color for different markers.
   $: changeColor(myChart, showingType);
 
-  //   $: if ($store.currIdx.source !== 'scatter') {
-  //     fakeHover($store.currIdx.idx);
-  //   }
+  $: if ($store.currIdx.source !== 'scatter') {
+    anotherChart.data.datasets[0].data = [coords[$store.currIdx.idx]];
+    anotherChart.data.datasets[0].backgroundColor = getColor(showingType)[$store.currIdx.idx];
+    anotherChart.update();
+    //   fakeHover($store.currIdx.idx);
+  }
 </script>
 
 <ButtonGroup names={cellTypes} color="slate" bind:curr={showingType} />
-<div class="relative"><canvas class="" id="myChart" /></div>
+<div class="relative">
+  <canvas class="absolute" id="another" />
+  <canvas class="" id="myChart" />
+</div>
