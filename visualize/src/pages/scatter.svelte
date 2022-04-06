@@ -84,6 +84,8 @@
               { intersect: true },
               true
             );
+
+            anotherChart.canvas.style.cursor = points.length > 0 ? 'pointer' : '';
             if (points.length === 0 || points[0].index === curr) return;
             curr = points[0].index;
             if ($store.lockedIdx.idx === -1) {

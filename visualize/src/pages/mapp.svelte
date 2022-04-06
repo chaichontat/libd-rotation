@@ -130,6 +130,7 @@
     );
 
     map.on('pointermove', (e) => {
+      map.getViewport().style.cursor = map.hasFeatureAtPixel(e.pixel) ? 'pointer' : '';
       map.forEachFeatureAtPixel(e.pixel, (f) => {
         const idx = f.getId() as number | undefined;
         if (idx === curr || !idx) return true;
