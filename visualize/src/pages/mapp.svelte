@@ -49,10 +49,10 @@
           ]
         : [
             {
-              url: `https://chaichontat-host.s3.us-west-004.backblazeb2.com/libd-rotation/${sample}/${sample}_1.tif`
+              url: `https://chaichontat-host.s3.us-west-004.backblazeb2.com/libd-rotation/${sample}_1.tif`
             },
             {
-              url: `https://chaichontat-host.s3.us-west-004.backblazeb2.com/libd-rotation/${sample}/${sample}_2.tif`
+              url: `https://chaichontat-host.s3.us-west-004.backblazeb2.com/libd-rotation/${sample}_2.tif`
             }
           ]
     });
