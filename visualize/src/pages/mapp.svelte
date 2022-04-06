@@ -79,7 +79,7 @@
         5,
         spot_px
       ],
-      color: ['interpolate', ['linear'], ['get', rna], 0, '#3e0e51', 4, '#428e8c', 8, '#fce652'],
+      color: ['interpolate', ['linear'], ['get', rna], 0, '#000', 8, '#fce652'],
       opacity: ['var', 'opacity']
     }
   });
