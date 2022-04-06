@@ -64,7 +64,13 @@
               grid: { display: false },
               ticks: { display: false }
             },
-            y: { min: min[1], max: max[1], grid: { display: false }, ticks: { display: false } }
+            y: {
+              min: min[1],
+              max: max[1],
+              grid: { display: false },
+              ticks: { display: false },
+              reverse: true
+            }
           },
           plugins: {
             legend: { display: false },
@@ -149,7 +155,8 @@
               min: min[1],
               max: max[1],
               grid: { display: false },
-              ticks: { display: false }
+              ticks: { display: false },
+              reverse: true
             }
           },
           plugins: {

@@ -3,6 +3,7 @@ import { Circle, Point } from 'ol/geom.js';
 import { Vector as VectorLayer } from 'ol/layer.js';
 import VectorSource from 'ol/source/Vector.js';
 import type { Style } from 'ol/style.js';
+import { params } from './store';
 
 export function colorVarFactory(mapping: { [key: string]: number }) {
   const len = Object.keys(mapping).length - 1;
@@ -29,7 +30,10 @@ export function getWebGLCircles() {
   const addData = (coords: { x: number; y: number }[], byRow: { [x: string]: number }[]) =>
     webGLSource.addFeatures(
       coords.map(({ x, y }, i) => {
-        const f = new Feature({ geometry: new Point([x, y]), ...byRow[i] });
+        const f = new Feature({
+          geometry: new Point([x * params.mPerPx, -y * params.mPerPx]),
+          ...byRow[i]
+        });
         f.setId(i);
         return f;
       })
@@ -39,7 +43,7 @@ export function getWebGLCircles() {
 }
 
 export function getCanvasCircle(style: Style) {
-  const circleFeature = new Feature({ geometry: new Circle([0, 0], 130.75 / 2) });
+  const circleFeature = new Feature({ geometry: new Circle([0, 0], params.spotDiam / 2) });
   const circleSource = new VectorSource({ features: [circleFeature] });
   const circleLayer = new VectorLayer({
     source: circleSource,

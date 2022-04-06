@@ -15,7 +15,7 @@
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import Data from '../lib/fetcher';
-  import { currRna, store } from '../lib/store';
+  import { currRna, store, params } from '../lib/store';
 
   export let sample: string;
   export let proteinMap: { [key: string]: number };
@@ -58,6 +58,8 @@
     });
   }
 
+  const spot_px = params.spotDiam / params.mPerPx;
+
   const genStyle = (rna: string): LiteralStyle => ({
     variables: { opacity: 0.5 },
     symbol: {
@@ -67,15 +69,15 @@
         ['exponential', 2],
         ['zoom'],
         1,
-        4.0625,
+        spot_px / 32,
         2,
-        8.175,
+        spot_px / 16,
         3,
-        16.34,
+        spot_px / 8,
         4,
-        32.6875,
+        spot_px / 4,
         5,
-        130.75
+        spot_px
       ],
       color: ['interpolate', ['linear'], ['get', rna], 0, '#3e0e51', 4, '#428e8c', 8, '#fce652'],
       opacity: ['var', 'opacity']
@@ -109,6 +111,8 @@
       },
       source: sourceTiff
     });
+
+    console.log(sourceTiff);
 
     map = new Map({
       target: 'map',
@@ -178,16 +182,16 @@
   // Move view
   $: {
     if (map) {
-      console.log($store.lockedIdx);
-
       const idx = $store.lockedIdx.idx !== -1 ? $store.lockedIdx : $store.currIdx;
       const { x, y } = coords[idx.idx];
       if ($store.currIdx.source !== 'map') {
         const zoom = $store.lockedIdx.idx !== -1 ? 5 : 4.5;
         // map.getView().setCenter([x, y]);
-        map.getView().animate({ center: [x, y], duration: 100, zoom });
+        map
+          .getView()
+          .animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100, zoom });
       }
-      circleFeature?.getGeometry()?.setCenter([x, y]);
+      circleFeature?.getGeometry()?.setCenter([x * params.mPerPx, -y * params.mPerPx]);
     }
   }
 
@@ -227,12 +231,12 @@
 
   <div id="map" class="relative h-[70vh] shadow-lg">
     <div
-      class="absolute left-14 top-[1.2rem] z-10 text-xl font-medium text-white opacity-90 xl:text-2xl"
+      class="absolute left-14 top-[1.2rem] z-10 text-lg font-medium text-white opacity-90 xl:text-xl"
     >
       Spots: {$currRna}
     </div>
     <div
-      class="absolute top-[4.75rem] left-3 z-10 flex flex-col text-xl font-medium text-white opacity-90 xl:text-2xl"
+      class="absolute top-[4.75rem] left-3 z-10 flex flex-col text-lg font-medium text-white opacity-90 xl:text-xl"
     >
       {#each ['text-blue-600', 'text-green-600', 'text-red-600'] as color, i}
         {#if showing[i] !== 'None'}
@@ -261,7 +265,6 @@
       />
     </label>
   </div>
-  "ol-zoom-in"
 </div>
 
 <style lang="postcss">
