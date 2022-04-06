@@ -147,7 +147,8 @@
 
         const idx = f.getId() as number | undefined;
         if (!idx) return true;
-        $store.lockedIdx = { idx: idx === $store.lockedIdx.idx ? -1 : idx, source: 'scatter' }; // As if came from outside.
+        const unlock = idx === $store.lockedIdx.idx;
+        $store.lockedIdx = { idx: unlock ? -1 : idx, source: 'scatter' }; // As if came from outside.
         curr = idx;
         return true;
       });
@@ -185,11 +186,13 @@
       const idx = $store.lockedIdx.idx !== -1 ? $store.lockedIdx : $store.currIdx;
       const { x, y } = coords[idx.idx];
       if ($store.currIdx.source !== 'map') {
-        const zoom = $store.lockedIdx.idx !== -1 ? 5 : 4.5;
-        // map.getView().setCenter([x, y]);
-        map
-          .getView()
-          .animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100, zoom });
+        const view = map.getView();
+        const currZoom = view.getZoom();
+        if ($store.lockedIdx.idx !== -1) {
+          view.animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100, zoom: 5 });
+        } else if (currZoom && currZoom > 2) {
+          view.animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100 });
+        }
       }
       circleFeature?.getGeometry()?.setCenter([x * params.mPerPx, -y * params.mPerPx]);
     }
