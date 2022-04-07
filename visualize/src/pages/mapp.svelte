@@ -1,23 +1,23 @@
 <script lang="ts">
   import { browser, dev } from '$app/env';
   import { base } from '$app/paths';
-  import Colorbar from '$src/lib/components/colorbar.svelte';
   import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/maplib';
-  import { select } from '$src/lib/mapp/selector';
   import { ScaleLine, Zoom } from 'ol/control.js';
-  import type { Point } from 'ol/geom';
-  import type { Draw } from 'ol/interaction';
+  import type { Point } from 'ol/geom.js';
+  import type { Draw } from 'ol/interaction.js';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
   import TileLayer from 'ol/layer/WebGLTile.js';
   import Map from 'ol/Map.js';
   import 'ol/ol.css';
   import GeoTIFF from 'ol/source/GeoTIFF.js';
-  import type VectorSource from 'ol/source/Vector';
+  import type VectorSource from 'ol/source/Vector.js';
   import { Stroke, Style } from 'ol/style.js';
-  import type { LiteralStyle } from 'ol/style/literal';
+  import type { LiteralStyle } from 'ol/style/literal.js';
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
+  import Colorbar from '../lib/components/colorbar.svelte';
   import Data from '../lib/fetcher';
+  import { select } from '../lib/mapp/selector';
   import { currRna, params, store } from '../lib/store';
 
   let elem: HTMLDivElement;

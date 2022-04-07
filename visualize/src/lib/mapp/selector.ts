@@ -1,12 +1,12 @@
 import type { Map } from 'ol';
 import Feature from 'ol/Feature.js';
 import { Circle, Geometry, Point } from 'ol/geom.js';
-import { Modify, Snap } from 'ol/interaction';
+import { Modify, Snap } from 'ol/interaction.js';
 import Draw, { DrawEvent } from 'ol/interaction/Draw.js';
-import type { ModifyEvent } from 'ol/interaction/Modify';
+import type { ModifyEvent } from 'ol/interaction/Modify.js';
 import { Vector as VectorLayer } from 'ol/layer.js';
 import 'ol/ol.css';
-import VectorSource from 'ol/source/Vector';
+import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style } from 'ol/style.js';
 import { multipleSelect, params } from '../store';
 

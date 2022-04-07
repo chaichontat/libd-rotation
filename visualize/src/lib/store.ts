@@ -1,4 +1,4 @@
-import { readable, writable, type Writable } from 'svelte/store';
+import { writable, type Writable } from 'svelte/store';
 
 export type State = {
   lockedIdx: { idx: number; source: 'scatter' | 'map' };

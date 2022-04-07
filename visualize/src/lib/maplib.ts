@@ -2,7 +2,7 @@ import Feature from 'ol/Feature.js';
 import { Circle, Point } from 'ol/geom.js';
 import { Vector as VectorLayer } from 'ol/layer.js';
 import 'ol/ol.css';
-import VectorSource from 'ol/source/Vector';
+import VectorSource from 'ol/source/Vector.js';
 import type { Style } from 'ol/style.js';
 import { params } from './store';
 
