@@ -247,16 +247,14 @@
         {/if}
       {/each}
     </div>
-    <label
-      class="absolute right-4 top-4 z-50 inline-flex cursor-pointer flex-col gap-y-1 rounded-lg bg-neutral-600/70 p-2 px-3 text-sm text-white/90 backdrop-blur-sm transition-all hover:bg-neutral-600/90"
-      ><div>
-        <input
-          type="checkbox"
-          class="mr-0.5 translate-y-[1.5px] opacity-80"
-          bind:checked={showAllSpots}
-        />
+    <div
+      class="absolute right-4 top-4 z-50 inline-flex flex-col gap-y-1 rounded-lg bg-neutral-600/70 p-2 px-3 text-sm text-white/90 backdrop-blur-sm transition-all hover:bg-neutral-600/90"
+    >
+      <label class="cursor-pointer">
+        <input type="checkbox" class="mr-0.5 opacity-80" bind:checked={showAllSpots} />
         <span>Show all spots</span>
-      </div>
+      </label>
+
       <input
         type="range"
         min="0"
@@ -266,7 +264,8 @@
         on:mousedown={() => (showAllSpots = true)}
         class="max-w-[36rem] cursor-pointer opacity-80"
       />
-    </label>
+    </div>
+
     <Colorbar
       class="right-10 top-24 z-10"
       bind:opacity={colorOpacity}

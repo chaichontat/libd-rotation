@@ -7,7 +7,7 @@
     "strict": true,
     "baseUrl": ".",
     "esModuleInterop": true,
-    "noUncheckedIndexedAccess": true,
+    // "noUncheckedIndexedAccess": true,
     "noFallthroughCasesInSwitch": true,
     "allowJs": true,
     "checkJs": true,
