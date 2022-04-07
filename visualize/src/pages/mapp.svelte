@@ -14,11 +14,13 @@
   import GeoTIFF from 'ol/source/GeoTIFF.js';
   import type VectorSource from 'ol/source/Vector';
   import { Stroke, Style } from 'ol/style.js';
+  import type { LiteralStyle } from 'ol/style/literal';
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import Data from '../lib/fetcher';
   import { currRna, params, store } from '../lib/store';
 
+  let elem: HTMLDivElement;
   export let sample: string;
   export let proteinMap: { [key: string]: number };
   let selecting = false;
@@ -39,7 +41,6 @@
 
   let curr = 0;
   let draw: Draw;
-  // let donotmove = false; // Indicates that the move event comes from the map
 
   if (browser) {
     sourceTiff = new GeoTIFF({
@@ -102,7 +103,6 @@
       minZoom: 3,
       // @ts-expect-error
       source: webGLSource,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       style: genStyle($currRna)
     });
 
@@ -161,7 +161,10 @@
       });
     });
 
-    draw = select(map, webGLSource.getFeatures(), circleSource);
+    map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
+    map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
+
+    draw = select(map, webGLSource.getFeatures());
     draw.on('drawend', () => (selecting = false));
 
     // draw.on('drawstart', (event: BaseEvent) => {
@@ -189,7 +192,6 @@
       // minZoom: 3,
       // @ts-expect-error
       source: webGLSource,
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       style: genStyle($currRna)
     });
 
@@ -218,10 +220,14 @@
 
   $: webGLLayer?.setVisible(showAllSpots);
 
-  $: if (selecting) {
-    map?.addInteraction(draw);
-  } else {
-    map?.removeInteraction(draw);
+  $: if (elem) {
+    if (selecting) {
+      map?.addInteraction(draw);
+      map.getViewport().style.cursor = 'crosshair';
+    } else {
+      map?.removeInteraction(draw);
+      map.getViewport().style.cursor = 'grab';
+    }
   }
 </script>
 
@@ -252,7 +258,7 @@
     {/each}
   </div>
 
-  <div id="map" class="relative h-[70vh] shadow-lg">
+  <div id="map" class="relative h-[70vh] cursor-grab shadow-lg" bind:this={elem}>
     <!-- Spot indicator -->
     <div
       class="absolute left-14 top-[1.2rem] z-10 text-lg font-medium text-white opacity-90 xl:text-xl"
