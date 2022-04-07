@@ -1,7 +1,7 @@
 <script lang="ts">
   import ButtonGroup from '$src/lib/components/buttonGroup.svelte';
   import Colorbar from '$src/lib/components/colorbar.svelte';
-  import Chart, { type ChartEvent } from 'chart.js/auto';
+  import Chart, { type ChartEvent } from 'chart.js/auto/auto.js';
   import colormap from 'colormap';
   import { onMount } from 'svelte';
   import Data, { dataProcess } from '../lib/fetcher';

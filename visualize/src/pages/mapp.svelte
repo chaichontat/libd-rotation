@@ -80,8 +80,8 @@
         5,
         spot_px
       ],
-      color: ['interpolate', ['linear'], ['get', rna], 0, '#000', 8, '#fce652'],
-      opacity: ['var', 'opacity']
+      color: '#fce652', //['interpolate', ['linear'], ['get', rna], 0, '#000', 8, '#fce652'],
+      opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', rna], 8]], 0, 1]
     }
   });
 
