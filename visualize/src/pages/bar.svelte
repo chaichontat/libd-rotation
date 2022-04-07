@@ -2,9 +2,9 @@
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
   import Data from '../lib/fetcher';
-  import { store } from '../lib/store';
+  import { multipleSelect, store } from '../lib/store';
 
-  const { byRow } = Data;
+  const { byRow, data } = Data;
   Chart.defaults.font.size = 14;
 
   let bar: Chart<'bar', Record<string, number>, string>;
@@ -30,7 +30,6 @@
           },
           y: {
             min: 0,
-            max: 10,
             grid: { borderColor: 'white' },
             ticks: { color: 'white' },
             reverse: true
@@ -55,6 +54,15 @@
       }
       bar.update();
     }
+  }
+
+  $: if (bar) {
+    const idxs = $multipleSelect;
+    const summed = Object.keys(data).reduce((acc, key) => {
+      return { ...acc, [key]: idxs.map((v) => data[key][v]).reduce((a, b) => a + b, 0) };
+    }, {} as typeof byRow[0]);
+    bar.data.datasets[0].data = summed;
+    bar.update();
   }
 </script>
 

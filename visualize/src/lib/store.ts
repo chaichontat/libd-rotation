@@ -14,4 +14,6 @@ export const store: Writable<State> = writable({
 
 export const currRna: Writable<string> = writable('');
 
+export const multipleSelect: Writable<number[]> = writable([]);
+
 export const params = { spotDiam: 65e-6, mPerPx: 0.497e-6 };

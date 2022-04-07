@@ -3,15 +3,16 @@
   import { base } from '$app/paths';
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/maplib';
+  import { select } from '$src/lib/mapp/selector';
   import { ScaleLine, Zoom } from 'ol/control.js';
   import type { Point } from 'ol/geom';
+  import type { Draw } from 'ol/interaction';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
   import TileLayer from 'ol/layer/WebGLTile.js';
   import Map from 'ol/Map.js';
   import 'ol/ol.css';
   import GeoTIFF from 'ol/source/GeoTIFF.js';
   import type VectorSource from 'ol/source/Vector';
-  import type { LiteralStyle } from 'ol/src/style/literal';
   import { Stroke, Style } from 'ol/style.js';
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
@@ -20,7 +21,7 @@
 
   export let sample: string;
   export let proteinMap: { [key: string]: number };
-
+  let selecting = false;
   const proteins = Object.keys(proteinMap);
 
   const getColorParams = colorVarFactory(proteinMap);
@@ -37,6 +38,7 @@
   let showing = proteins.slice(0, 3) as [string, string, string];
 
   let curr = 0;
+  let draw: Draw;
   // let donotmove = false; // Indicates that the move event comes from the map
 
   if (browser) {
@@ -80,13 +82,16 @@
         5,
         spot_px
       ],
-      color: '#fce652', //['interpolate', ['linear'], ['get', rna], 0, '#000', 8, '#fce652'],
-      opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', rna], 8]], 0, 1]
+      color: '#fce652ff',
+
+      // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
+      opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', rna], 8]], 0.1, 1]
+      // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
     }
   });
 
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
-  const { circleFeature, circleLayer } = getCanvasCircle(selectStyle);
+  const { circleFeature, circleLayer, circleSource } = getCanvasCircle(selectStyle);
   let { webGLSource, addData } = getWebGLCircles();
   let webGLLayer: WebGLPointsLayer<VectorSource<Point>>;
 
@@ -95,7 +100,9 @@
   onMount(() => {
     webGLLayer = new WebGLPointsLayer({
       minZoom: 3,
+      // @ts-expect-error
       source: webGLSource,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       style: genStyle($currRna)
     });
 
@@ -129,23 +136,22 @@
         minWidth: 140
       })
     );
-
     map.on('pointermove', (e) => {
-      map.forEachFeatureAtPixel(e.pixel, (f) => {
-        const idx = f.getId() as number | undefined;
-        if (idx === curr || !idx) return true;
-        $store.currIdx = { idx, source: 'map' }; // As if came from outside.
-        curr = idx;
-        return true;
-      });
+      map.forEachFeatureAtPixel(
+        e.pixel,
+        (f) => {
+          const idx = f.getId() as number | undefined;
+          if (idx === curr || !idx) return true;
+          $store.currIdx = { idx, source: 'map' }; // As if came from outside.
+          curr = idx;
+          return true;
+        },
+        { layerFilter: (layer) => layer === webGLLayer }
+      );
     });
 
     map.on('click', (e) => {
-      console.log('hi');
-
       map.forEachFeatureAtPixel(e.pixel, (f) => {
-        // console.log(f);
-
         const idx = f.getId() as number | undefined;
         if (!idx) return true;
         const unlock = idx === $store.lockedIdx.idx;
@@ -154,6 +160,15 @@
         return true;
       });
     });
+
+    draw = select(map, webGLSource.getFeatures(), circleSource);
+    draw.on('drawend', () => (selecting = false));
+
+    // draw.on('drawstart', (event: BaseEvent) => {
+    //   selectSource.clear();
+    //   select.setActive(false);
+    //   selectedFeatures.clear();
+    // });
   });
 
   // // Highlight circle on hover.
@@ -164,15 +179,17 @@
   // }
 
   // Update "brightness"
-  $: if (layer) layer.updateStyleVariables(getColorParams(showing, maxIntensity));
-  $: if (webGLLayer) webGLLayer.updateStyleVariables({ opacity: colorOpacity });
+  $: layer?.updateStyleVariables(getColorParams(showing, maxIntensity));
+  $: webGLLayer?.updateStyleVariables({ opacity: colorOpacity });
 
   // Change RNA color (circles)
   $: if (webGLLayer) {
     const previousLayer = webGLLayer;
     webGLLayer = new WebGLPointsLayer({
       // minZoom: 3,
+      // @ts-expect-error
       source: webGLSource,
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       style: genStyle($currRna)
     });
 
@@ -199,10 +216,13 @@
     }
   }
 
-  $: if (map) webGLLayer.setVisible(showAllSpots);
-  // $: console.log($store.currIdx);
+  $: webGLLayer?.setVisible(showAllSpots);
 
-  // $: console.log(map?.getControls());
+  $: if (selecting) {
+    map?.addInteraction(draw);
+  } else {
+    map?.removeInteraction(draw);
+  }
 </script>
 
 <div class="flex flex-grow flex-col gap-y-6">
@@ -233,11 +253,14 @@
   </div>
 
   <div id="map" class="relative h-[70vh] shadow-lg">
+    <!-- Spot indicator -->
     <div
       class="absolute left-14 top-[1.2rem] z-10 text-lg font-medium text-white opacity-90 xl:text-xl"
     >
       Spots: {$currRna}
     </div>
+
+    <!-- Color indicator -->
     <div
       class="absolute top-[4.75rem] left-3 z-10 flex flex-col text-lg font-medium text-white opacity-90 xl:text-xl"
     >
@@ -247,6 +270,8 @@
         {/if}
       {/each}
     </div>
+
+    <!-- Show all spots -->
     <div
       class="absolute right-4 top-4 z-50 inline-flex flex-col gap-y-1 rounded-lg bg-neutral-600/70 p-2 px-3 text-sm text-white/90 backdrop-blur-sm transition-all hover:bg-neutral-600/90"
     >
@@ -273,6 +298,16 @@
       min={0}
       max={10}
     />
+
+    <button
+      class="absolute top-[1.05rem] right-[12rem] z-20 rounded bg-sky-700/70 px-2 py-1 text-sm text-slate-200 shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80"
+      class:bg-gray-600={selecting}
+      class:hover:bg-gray-600={selecting}
+      class:active:bg-gray-600={selecting}
+      on:click={() => (selecting = true)}
+      disabled={selecting}
+      >Select
+    </button>
   </div>
 </div>
 
