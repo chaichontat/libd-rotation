@@ -1,6 +1,7 @@
 <script lang="ts">
   import { browser, dev } from '$app/env';
   import { base } from '$app/paths';
+  import Colorbar from '$src/lib/components/colorbar.svelte';
   import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/maplib';
   import { ScaleLine, Zoom } from 'ol/control.js';
   import type { Point } from 'ol/geom';
@@ -15,7 +16,7 @@
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import Data from '../lib/fetcher';
-  import { currRna, store, params } from '../lib/store';
+  import { currRna, params, store } from '../lib/store';
 
   export let sample: string;
   export let proteinMap: { [key: string]: number };
@@ -207,7 +208,6 @@
 <div class="flex flex-grow flex-col gap-y-6">
   <div class="flex flex-col">
     {#each ['blue', 'green', 'red'] as color, i}
-      <!-- content here -->
       <div class="flex gap-x-4">
         <ButtonGroup names={proteins} bind:curr={showing[i]} {color} />
         <input
@@ -215,7 +215,7 @@
           min="0"
           max="254"
           bind:value={maxIntensity[i]}
-          class="hidden 2xl:block"
+          class="hidden cursor-pointer 2xl:block"
         />
       </div>
     {/each}
@@ -227,7 +227,7 @@
         min="0"
         max="254"
         bind:value={maxIntensity[i]}
-        class="block w-full 2xl:hidden"
+        class="block w-full cursor-pointer 2xl:hidden"
       />
     {/each}
   </div>
@@ -267,6 +267,13 @@
         class="max-w-[36rem] cursor-pointer opacity-80"
       />
     </label>
+    <Colorbar
+      class="right-10 top-24 z-10"
+      bind:opacity={colorOpacity}
+      color="yellow"
+      min={0}
+      max={10}
+    />
   </div>
 </div>
 

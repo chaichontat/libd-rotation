@@ -1,11 +1,11 @@
 <script lang="ts">
   import ButtonGroup from '$src/lib/components/buttonGroup.svelte';
-  import Chart, { type ChartEvent } from 'chart.js/auto/auto.js';
+  import Colorbar from '$src/lib/components/colorbar.svelte';
+  import Chart, { type ChartEvent } from 'chart.js/auto';
   import colormap from 'colormap';
   import { onMount } from 'svelte';
-  import Data from '../lib/fetcher';
-  import { dataProcess } from '../lib/fetcher';
-  import { store, currRna } from '../lib/store';
+  import Data, { dataProcess } from '../lib/fetcher';
+  import { currRna, store } from '../lib/store';
   import { genLRU } from '../lib/utils';
 
   let curr = 0;
@@ -183,6 +183,7 @@
 
 <ButtonGroup names={cellTypes} color="slate" bind:curr={$currRna} />
 <div class="relative">
+  <Colorbar min={0} max={10} />
   <canvas class="absolute" id="another" />
   <canvas class="" id="myChart" />
   <!-- <div
