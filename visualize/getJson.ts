@@ -27,22 +27,30 @@ const to_fetch = [
   'TMEM119'
 ];
 
-const p = path.join(dir, sample);
+async function getFiles(p: string, urls: string[]): Promise<Promise<void>[]> {
+  await fs.mkdir(p, { recursive: true });
+  return urls.map(async (url) => {
+    const pa = path.join(p, url.split('/').pop()!);
+    try {
+      await fs.access(pa);
+    } catch (e) {
+      await fetch(url)
+        .then((r) => r.arrayBuffer())
+        .then((r) => fs.writeFile(pa, Buffer.from(r)));
+    }
+  });
+}
 
 async function run() {
-  await fs.mkdir(p, { recursive: true });
-  await Promise.all(
-    to_fetch.map(async (name) => {
-      const pa = path.join(p, `${name}.json`);
-      try {
-        await fs.access(pa);
-      } catch (e) {
-        await fetch(`${s3_url}/${sample}/${name}.json`)
-          .then((r) => r.json())
-          .then((j) => fs.writeFile(pa, JSON.stringify(j)));
-      }
-    })
+  const jsons = await getFiles(
+    path.join(dir, sample),
+    to_fetch.map((name) => `${s3_url}/${sample}/${name}.json`)
   );
+  const fonts = await getFiles(path.join(dir, 'fonts'), [
+    'https://rsms.me/inter/font-files/Inter-italic.var.woff2',
+    'https://rsms.me/inter/font-files/Inter-roman.var.woff2'
+  ]);
+  await Promise.all([...jsons, ...fonts]);
 }
 
 await run();
