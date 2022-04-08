@@ -7,6 +7,7 @@
   import Data, { dataProcess } from '../lib/fetcher';
   import { currRna, store } from '../lib/store';
   import { genLRU } from '../lib/utils';
+  import ChartDataLabels from 'chartjs-plugin-datalabels';
 
   let curr = 0;
 
@@ -53,6 +54,7 @@
             }
           ]
         },
+        plugins: [ChartDataLabels],
         options: {
           animation: false,
           // responsive: false,
@@ -74,7 +76,15 @@
           },
           plugins: {
             legend: { display: false },
-            tooltip: { enabled: false }
+            tooltip: { enabled: false },
+            datalabels: {
+              formatter: () => data[$currRna][$store.currIdx.idx],
+              align: 'end',
+              anchor: 'end',
+              offset: 2,
+              color: 'rgb(226 232 240)',
+              font: { size: 14 }
+            }
           },
           onHover: (evt: ChartEvent) => {
             if (!myChart || !evt.native || $store.lockedIdx.idx !== -1) return;

@@ -52,7 +52,6 @@
       } else {
         bar.data.datasets[0].data = byRow[$store.currIdx.idx];
       }
-      console.log(bar.data.datasets[0].data);
       bar.options.scales!.y!.max = 10;
       bar.update();
     }
@@ -63,7 +62,6 @@
       return { ...acc, [key]: $multipleSelect.map((v) => data[key][v]).reduce((a, b) => a + b, 0) };
     }, {} as typeof byRow[0]);
     bar.data.datasets[0].data = summed;
-    console.log(bar.data.datasets[0].data);
     bar.options.scales!.y!.max = undefined;
     bar.update();
   }
