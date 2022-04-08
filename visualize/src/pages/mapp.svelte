@@ -3,23 +3,27 @@
   import { base } from '$app/paths';
   import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/maplib';
   import { ScaleLine, Zoom } from 'ol/control.js';
-  import type { Point } from 'ol/geom';
+  import type { Point } from 'ol/geom.js';
+  import type { Draw } from 'ol/interaction.js';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
   import TileLayer from 'ol/layer/WebGLTile.js';
   import Map from 'ol/Map.js';
   import 'ol/ol.css';
   import GeoTIFF from 'ol/source/GeoTIFF.js';
-  import type VectorSource from 'ol/source/Vector';
-  import type { LiteralStyle } from 'ol/src/style/literal';
+  import type VectorSource from 'ol/source/Vector.js';
   import { Stroke, Style } from 'ol/style.js';
+  import type { LiteralStyle } from 'ol/style/literal.js';
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
+  import Colorbar from '../lib/components/colorbar.svelte';
   import Data from '../lib/fetcher';
-  import { currRna, store, params } from '../lib/store';
+  import { select } from '../lib/mapp/selector';
+  import { currRna, params, store } from '../lib/store';
 
+  let elem: HTMLDivElement;
   export let sample: string;
   export let proteinMap: { [key: string]: number };
-
+  let selecting = false;
   const proteins = Object.keys(proteinMap);
 
   const getColorParams = colorVarFactory(proteinMap);
@@ -36,7 +40,8 @@
   let showing = proteins.slice(0, 3) as [string, string, string];
 
   let curr = 0;
-  // let donotmove = false; // Indicates that the move event comes from the map
+  let draw: Draw;
+  let drawClear: () => void;
 
   if (browser) {
     sourceTiff = new GeoTIFF({
@@ -79,13 +84,16 @@
         5,
         spot_px
       ],
-      color: ['interpolate', ['linear'], ['get', rna], 0, '#000', 8, '#fce652'],
-      opacity: ['var', 'opacity']
+      color: '#fce652ff',
+
+      // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
+      opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', rna], 8]], 0.1, 1]
+      // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
     }
   });
 
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
-  const { circleFeature, circleLayer } = getCanvasCircle(selectStyle);
+  const { circleFeature, circleLayer, circleSource } = getCanvasCircle(selectStyle);
   let { webGLSource, addData } = getWebGLCircles();
   let webGLLayer: WebGLPointsLayer<VectorSource<Point>>;
 
@@ -94,6 +102,7 @@
   onMount(() => {
     webGLLayer = new WebGLPointsLayer({
       minZoom: 3,
+      // @ts-expect-error
       source: webGLSource,
       style: genStyle($currRna)
     });
@@ -128,24 +137,22 @@
         minWidth: 140
       })
     );
-
     map.on('pointermove', (e) => {
-      map.getViewport().style.cursor = map.hasFeatureAtPixel(e.pixel) ? 'pointer' : '';
-      map.forEachFeatureAtPixel(e.pixel, (f) => {
-        const idx = f.getId() as number | undefined;
-        if (idx === curr || !idx) return true;
-        $store.currIdx = { idx, source: 'map' }; // As if came from outside.
-        curr = idx;
-        return true;
-      });
+      map.forEachFeatureAtPixel(
+        e.pixel,
+        (f) => {
+          const idx = f.getId() as number | undefined;
+          if (idx === curr || !idx) return true;
+          $store.currIdx = { idx, source: 'map' }; // As if came from outside.
+          curr = idx;
+          return true;
+        },
+        { layerFilter: (layer) => layer === webGLLayer }
+      );
     });
 
     map.on('click', (e) => {
-      console.log('hi');
-
       map.forEachFeatureAtPixel(e.pixel, (f) => {
-        // console.log(f);
-
         const idx = f.getId() as number | undefined;
         if (!idx) return true;
         const unlock = idx === $store.lockedIdx.idx;
@@ -154,6 +161,18 @@
         return true;
       });
     });
+
+    map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
+    map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
+
+    ({ draw, drawClear } = select(map, webGLSource.getFeatures()));
+    draw.on('drawend', () => (selecting = false));
+
+    // draw.on('drawstart', (event: BaseEvent) => {
+    //   selectSource.clear();
+    //   select.setActive(false);
+    //   selectedFeatures.clear();
+    // });
   });
 
   // // Highlight circle on hover.
@@ -164,14 +183,15 @@
   // }
 
   // Update "brightness"
-  $: if (layer) layer.updateStyleVariables(getColorParams(showing, maxIntensity));
-  $: if (webGLLayer) webGLLayer.updateStyleVariables({ opacity: colorOpacity });
+  $: layer?.updateStyleVariables(getColorParams(showing, maxIntensity));
+  $: webGLLayer?.updateStyleVariables({ opacity: colorOpacity });
 
   // Change RNA color (circles)
   $: if (webGLLayer) {
     const previousLayer = webGLLayer;
     webGLLayer = new WebGLPointsLayer({
       // minZoom: 3,
+      // @ts-expect-error
       source: webGLSource,
       style: genStyle($currRna)
     });
@@ -199,16 +219,24 @@
     }
   }
 
-  $: if (map) webGLLayer.setVisible(showAllSpots);
-  // $: console.log($store.currIdx);
+  $: webGLLayer?.setVisible(showAllSpots);
 
-  // $: console.log(map?.getControls());
+  $: if (elem) {
+    if (selecting) {
+      drawClear();
+      map?.addInteraction(draw);
+      map.getViewport().style.cursor = 'crosshair';
+    } else {
+      map?.removeInteraction(draw);
+      map.getViewport().style.cursor = 'grab';
+    }
+  }
 </script>
 
+<!-- Buttons -->
 <div class="flex flex-grow flex-col gap-y-6">
   <div class="flex flex-col">
     {#each ['blue', 'green', 'red'] as color, i}
-      <!-- content here -->
       <div class="flex gap-x-4">
         <ButtonGroup names={proteins} bind:curr={showing[i]} {color} />
         <input
@@ -216,11 +244,12 @@
           min="0"
           max="254"
           bind:value={maxIntensity[i]}
-          class="hidden 2xl:block"
+          class="hidden cursor-pointer 2xl:block"
         />
       </div>
     {/each}
   </div>
+  <!-- Brightness -->
   <div class="flex w-full gap-x-8">
     {#each [0, 1, 2] as i}
       <input
@@ -228,17 +257,21 @@
         min="0"
         max="254"
         bind:value={maxIntensity[i]}
-        class="block w-full 2xl:hidden"
+        class="block w-full cursor-pointer 2xl:hidden"
       />
     {/each}
   </div>
 
-  <div id="map" class="relative h-[70vh] shadow-lg">
+  <!-- Map -->
+  <div id="map" class="relative h-[70vh] cursor-grab shadow-lg" bind:this={elem}>
+    <!-- Spot indicator -->
     <div
       class="absolute left-14 top-[1.2rem] z-10 text-lg font-medium text-white opacity-90 xl:text-xl"
     >
       Spots: {$currRna}
     </div>
+
+    <!-- Color indicator -->
     <div
       class="absolute top-[4.75rem] left-3 z-10 flex flex-col text-lg font-medium text-white opacity-90 xl:text-xl"
     >
@@ -248,16 +281,16 @@
         {/if}
       {/each}
     </div>
-    <label
-      class="absolute right-4 top-4 z-50 inline-flex cursor-pointer flex-col gap-y-1 rounded-lg bg-neutral-600/70 p-2 px-3 text-sm text-white/90 backdrop-blur-sm transition-all hover:bg-neutral-600/90"
-      ><div>
-        <input
-          type="checkbox"
-          class="mr-0.5 translate-y-[1.5px] opacity-80"
-          bind:checked={showAllSpots}
-        />
+
+    <!-- Show all spots -->
+    <div
+      class="absolute right-4 top-4 z-50 inline-flex flex-col gap-y-1 rounded-lg bg-neutral-600/70 p-2 px-3 text-sm text-white/90 backdrop-blur-sm transition-all hover:bg-neutral-600/90"
+    >
+      <label class="cursor-pointer">
+        <input type="checkbox" class="mr-0.5 opacity-80" bind:checked={showAllSpots} />
         <span>Show all spots</span>
-      </div>
+      </label>
+
       <input
         type="range"
         min="0"
@@ -267,7 +300,35 @@
         on:mousedown={() => (showAllSpots = true)}
         class="max-w-[36rem] cursor-pointer opacity-80"
       />
-    </label>
+    </div>
+
+    <Colorbar
+      class="right-10 top-24 z-10"
+      bind:opacity={colorOpacity}
+      color="yellow"
+      min={0}
+      max={10}
+    />
+
+    <!-- Select button -->
+    <div class="absolute top-[1.05rem] right-[12rem] z-20 space-x-1">
+      <button
+        class="rounded bg-sky-700/70 px-2 py-1 text-sm text-slate-200 shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80"
+        class:bg-gray-600={selecting}
+        class:hover:bg-gray-600={selecting}
+        class:active:bg-gray-600={selecting}
+        on:click={() => (selecting = true)}
+        disabled={selecting}
+        >Select
+      </button>
+
+      <button
+        class="rounded bg-orange-700/70 px-2 py-1 text-sm text-slate-200 shadow backdrop-blur transition-all hover:bg-orange-600/80 active:bg-orange-500/80"
+        on:click={drawClear}
+        disabled={selecting}
+        >Clear
+      </button>
+    </div>
   </div>
 </div>
 

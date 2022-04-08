@@ -1,18 +1,33 @@
 // Globs do not accept variable. Pass in real string.
-const jsons = import.meta.globEager(`../../static/Br6522_Ant_IF/*.json`);
+
+type AllTypes = number[] | { x: string; y: string }[] | { [key: string]: number }[];
+type AllData<T extends string> = {
+  [key in T]: AllTypes;
+} & {
+  coords: { x: number; y: number }[];
+  by_row: Record<T, number>[];
+};
+
+const jsons: Record<string, { default: AllTypes }> = import.meta.globEager(
+  `../../static/Br6522_Ant_IF/*.json`
+);
 
 // Type not exactly correct. See `process`.
+// Need rest index signature
+// https://github.com/microsoft/TypeScript/issues/17867
+// https://github.com/microsoft/TypeScript/issues/7765
 const objs = Object.keys(jsons).reduce((acc, k) => {
   const name = k.split('/').pop()!.split('.')[0];
-  return { ...acc, [name]: jsons[k].default as number[] };
-}, {} as Record<string, number[]>);
+  return { ...acc, [name]: jsons[k].default };
+}, {} as AllData<string>);
 
-export function preprocess(data: Record<string, number[]>) {
+export function preprocess(data: AllData<string>) {
   const coords = data['coords'] as unknown as { x: number; y: number }[];
   const byRow = data['by_row'] as unknown as Record<string, number>[];
-  delete data['coords'];
-  delete data['by_row'];
-  return { data, coords, byRow };
+  const removed: Omit<AllData<string>, 'coords' | 'by_row'> = { ...data };
+  delete removed['coords'];
+  delete removed['by_row'];
+  return { data: removed as Record<string, number[]>, coords, byRow };
 }
 
 // export function fetchAll() {

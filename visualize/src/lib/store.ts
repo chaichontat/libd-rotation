@@ -1,4 +1,4 @@
-import { readable, writable, type Writable } from 'svelte/store';
+import { writable, type Writable } from 'svelte/store';
 
 export type State = {
   lockedIdx: { idx: number; source: 'scatter' | 'map' };
@@ -13,5 +13,7 @@ export const store: Writable<State> = writable({
 });
 
 export const currRna: Writable<string> = writable('');
+
+export const multipleSelect: Writable<number[]> = writable([]);
 
 export const params = { spotDiam: 65e-6, mPerPx: 0.497e-6 };
