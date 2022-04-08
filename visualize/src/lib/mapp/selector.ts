@@ -8,7 +8,7 @@ import { Vector as VectorLayer } from 'ol/layer.js';
 import 'ol/ol.css';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style } from 'ol/style.js';
-import CircleStyle from 'ol/style/Circle';
+import CircleStyle from 'ol/style/Circle.js';
 import { multipleSelect, params } from '../store';
 
 export function select(map: Map, features: Feature[]) {
