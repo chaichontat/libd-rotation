@@ -13,7 +13,7 @@
 
   const { data, coords } = Data;
   const { idxs, maxs, cellTypes } = dataProcess(data);
-  const colors = colormap({ colormap: 'viridis', nshades: 255, format: 'hex' });
+  const colors = colormap({ colormap: 'viridis', nshades: 256, format: 'hex' });
 
   $currRna = cellTypes[0];
   let myChart: Chart<'scatter', { x: number; y: number }[], string>;
@@ -26,7 +26,7 @@
     .map((x) => x + 100);
 
   const getColor = genLRU((name: string): string[] =>
-    data[name].map((v) => colors[Math.round((v / 8) * 255)])
+    data[name].map((v) => colors[Math.round(Math.min(v / 10, 1) * 255)])
   );
 
   function changeColor(chart: Chart, name: string): void {
