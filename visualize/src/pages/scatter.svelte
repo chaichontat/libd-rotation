@@ -1,7 +1,7 @@
 <script lang="ts">
   import ButtonGroup from '$src/lib/components/buttonGroup.svelte';
   import Colorbar from '$src/lib/components/colorbar.svelte';
-  import Chart, { type ChartEvent } from 'chart.js/auto/auto.js';
+  import Chart, { type ChartConfiguration, type ChartEvent } from 'chart.js/auto/auto.js';
   import colormap from 'colormap';
   import { onMount } from 'svelte';
   import Data, { dataProcess } from '../lib/fetcher';
@@ -12,7 +12,7 @@
   let curr = 0;
 
   const { data, coords } = Data;
-  const { idxs, maxs, cellTypes } = dataProcess(data);
+  const { cellTypes } = dataProcess(data);
   const colors = colormap({ colormap: 'viridis', nshades: 256, format: 'hex' });
 
   $currRna = cellTypes[0];
@@ -35,6 +35,30 @@
     chart.update();
   }
 
+  const chartOptions: ChartConfiguration<'scatter'> = {
+    animation: false,
+    aspectRatio: 1,
+    scales: {
+      x: {
+        min: min[0],
+        max: max[0],
+        grid: { display: false },
+        ticks: { display: false }
+      },
+      y: {
+        min: min[1],
+        max: max[1],
+        grid: { display: false },
+        ticks: { display: false },
+        reverse: true
+      }
+    },
+    plugins: {
+      legend: { display: false },
+      tooltip: { enabled: false }
+    }
+  };
+
   //   console.log(min);
   let anotherChart: Chart<'scatter', { x: number; y: number }[], string>;
   onMount(() => {
@@ -56,27 +80,9 @@
         },
         plugins: [ChartDataLabels],
         options: {
-          animation: false,
-          // responsive: false,
-          aspectRatio: 1,
-          scales: {
-            x: {
-              min: min[0],
-              max: max[0],
-              grid: { display: false },
-              ticks: { display: false }
-            },
-            y: {
-              min: min[1],
-              max: max[1],
-              grid: { display: false },
-              ticks: { display: false },
-              reverse: true
-            }
-          },
+          ...chartOptions,
           plugins: {
-            legend: { display: false },
-            tooltip: { enabled: false },
+            ...chartOptions.plugins,
             datalabels: {
               formatter: () => data[$currRna][$store.currIdx.idx],
               align: 'end',
@@ -87,7 +93,7 @@
             }
           },
           onHover: (evt: ChartEvent) => {
-            if (!myChart || !evt.native || $store.lockedIdx.idx !== -1) return;
+            if (!myChart || !evt.native || $store.locked) return;
             const points = myChart.getElementsAtEventForMode(
               evt.native,
               'nearest',
@@ -98,7 +104,7 @@
             anotherChart.canvas.style.cursor = points.length > 0 ? 'pointer' : '';
             if (points.length === 0 || points[0].index === curr) return;
             curr = points[0].index;
-            if ($store.lockedIdx.idx === -1) {
+            if (!$store.locked) {
               $store.currIdx = { idx: points[0].index, source: 'scatter' };
             }
           },
@@ -113,12 +119,10 @@
                 true
               );
               if (points.length === 0) return;
-              // $store.currIdx = { idx: points[0].index, source: 'scatter' };
               curr = points[0].index;
             }
             $store.lockedIdx.idx = $store.lockedIdx.idx === curr ? -1 : curr;
             $store.currIdx = { idx: curr, source: 'scatter' };
-            console.log($store.lockedIdx);
           }
         }
       }
@@ -129,15 +133,6 @@
       {
         data: {
           datasets: [
-            //   {
-            //     type: 'scatter',
-            //     data: [{ x: 10000, y: 10000 }],
-            //     // @ts-ignore
-            //     backgroundColor: 'white',
-            //     normalized: true,
-            //     pointRadius: 25,
-            //     borderColor: '#eeeeee'
-            //   },
             {
               type: 'scatter',
               data: coords,
@@ -152,41 +147,17 @@
             }
           ]
         },
-        options: {
-          animation: false,
-          // responsive: false,
-          aspectRatio: 1,
-          scales: {
-            x: {
-              min: min[0],
-              max: max[0],
-              grid: { display: false },
-              ticks: { display: false }
-            },
-            y: {
-              min: min[1],
-              max: max[1],
-              grid: { display: false },
-              ticks: { display: false },
-              reverse: true
-            }
-          },
-          plugins: {
-            legend: { display: false },
-            tooltip: { enabled: false }
-          }
-        }
+        options: chartOptions
       }
     );
   });
 
-  //   $: if (myChart) console.log(myChart.data.datasets);
-
   // Change color for different markers.
   $: changeColor(myChart, $currRna);
 
+  // Decision on what to show.
   $: if (anotherChart) {
-    const idx = $store.lockedIdx.idx === -1 ? $store.currIdx.idx : $store.lockedIdx.idx;
+    const idx = $store.locked ? $store.lockedIdx.idx : $store.currIdx.idx;
     anotherChart.data.datasets[0].data = [coords[idx]];
     anotherChart.data.datasets[0].backgroundColor = getColor($currRna)[idx] + 'cc';
     anotherChart.update();

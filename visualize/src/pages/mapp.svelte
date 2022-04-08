@@ -1,7 +1,7 @@
 <script lang="ts">
   import { browser, dev } from '$app/env';
   import { base } from '$app/paths';
-  import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/maplib';
+  import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/mapp/maplib';
   import { ScaleLine, Zoom } from 'ol/control.js';
   import type { Point } from 'ol/geom.js';
   import type { Draw } from 'ol/interaction.js';
@@ -29,7 +29,7 @@
   const getColorParams = colorVarFactory(proteinMap);
   const { coords, byRow } = Data;
 
-  let layer: TileLayer;
+  let bgLayer: TileLayer;
   let sourceTiff: GeoTIFF;
   let map: Map;
   let showAllSpots = true;
@@ -93,21 +93,20 @@
   });
 
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
-  const { circleFeature, circleLayer, circleSource } = getCanvasCircle(selectStyle);
-  let { webGLSource, addData } = getWebGLCircles();
-  let webGLLayer: WebGLPointsLayer<VectorSource<Point>>;
+  const { circleFeature, activeLayer } = getCanvasCircle(selectStyle);
+  let { spotsSource, addData } = getWebGLCircles();
+  let spotsLayer: WebGLPointsLayer<VectorSource<Point>>;
 
   addData(coords, byRow);
 
   onMount(() => {
-    webGLLayer = new WebGLPointsLayer({
-      minZoom: 3,
+    spotsLayer = new WebGLPointsLayer({
       // @ts-expect-error
-      source: webGLSource,
+      source: spotsSource,
       style: genStyle($currRna)
     });
 
-    layer = new TileLayer({
+    bgLayer = new TileLayer({
       style: {
         variables: getColorParams(showing, maxIntensity),
         color: [
@@ -121,11 +120,9 @@
       source: sourceTiff
     });
 
-    console.log(sourceTiff);
-
     map = new Map({
       target: 'map',
-      layers: [layer, webGLLayer, circleLayer],
+      layers: [bgLayer, spotsLayer, activeLayer],
       view: sourceTiff.getView()
     });
 
@@ -137,6 +134,8 @@
         minWidth: 140
       })
     );
+
+    // Hover over a circle.
     map.on('pointermove', (e) => {
       map.forEachFeatureAtPixel(
         e.pixel,
@@ -147,10 +146,11 @@
           curr = idx;
           return true;
         },
-        { layerFilter: (layer) => layer === webGLLayer }
+        { layerFilter: (layer) => layer === spotsLayer }
       );
     });
 
+    // Lock / unlock a circle.
     map.on('click', (e) => {
       map.forEachFeatureAtPixel(e.pixel, (f) => {
         const idx = f.getId() as number | undefined;
@@ -165,38 +165,24 @@
     map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
     map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
 
-    ({ draw, drawClear } = select(map, webGLSource.getFeatures()));
+    ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
     draw.on('drawend', () => (selecting = false));
-
-    // draw.on('drawstart', (event: BaseEvent) => {
-    //   selectSource.clear();
-    //   select.setActive(false);
-    //   selectedFeatures.clear();
-    // });
   });
 
-  // // Highlight circle on hover.
-  // $: if ($store.currIdx.idx !== curr) {
-  //   circlesSource.getFeatureById(curr)?.setStyle(circlesStyle);
-  //   circlesSource.getFeatureById($store.currIdx.idx)?.setStyle(selectStyle);
-  //   curr = $store.currIdx.idx;
-  // }
-
   // Update "brightness"
-  $: layer?.updateStyleVariables(getColorParams(showing, maxIntensity));
-  $: webGLLayer?.updateStyleVariables({ opacity: colorOpacity });
+  $: bgLayer?.updateStyleVariables(getColorParams(showing, maxIntensity));
+  $: spotsLayer?.updateStyleVariables({ opacity: colorOpacity });
 
-  // Change RNA color (circles)
-  $: if (webGLLayer) {
-    const previousLayer = webGLLayer;
-    webGLLayer = new WebGLPointsLayer({
-      // minZoom: 3,
+  // Change spot color
+  $: if (spotsLayer) {
+    const previousLayer = spotsLayer;
+    spotsLayer = new WebGLPointsLayer({
       // @ts-expect-error
-      source: webGLSource,
+      source: spotsSource,
       style: genStyle($currRna)
     });
 
-    map.addLayer(webGLLayer);
+    map.addLayer(spotsLayer);
     map.removeLayer(previousLayer);
     previousLayer.dispose();
   }
@@ -204,12 +190,12 @@
   // Move view
   $: {
     if (map) {
-      const idx = $store.lockedIdx.idx !== -1 ? $store.lockedIdx : $store.currIdx;
+      const idx = $store.locked ? $store.lockedIdx : $store.currIdx;
       const { x, y } = coords[idx.idx];
       if ($store.currIdx.source !== 'map') {
         const view = map.getView();
         const currZoom = view.getZoom();
-        if ($store.lockedIdx.idx !== -1) {
+        if ($store.locked) {
           view.animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100, zoom: 5 });
         } else if (currZoom && currZoom > 2) {
           view.animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100 });
@@ -219,8 +205,10 @@
     }
   }
 
-  $: webGLLayer?.setVisible(showAllSpots);
+  // Checkbox show all spots
+  $: spotsLayer?.setVisible(showAllSpots);
 
+  // Enable/disable polygon draw
   $: if (elem) {
     if (selecting) {
       drawClear();

@@ -4,7 +4,7 @@ import { Vector as VectorLayer } from 'ol/layer.js';
 import 'ol/ol.css';
 import VectorSource from 'ol/source/Vector.js';
 import type { Style } from 'ol/style.js';
-import { params } from './store';
+import { params } from '../store';
 
 export function colorVarFactory(mapping: { [key: string]: number }) {
   const len = Object.keys(mapping).length - 1;
@@ -26,10 +26,10 @@ export function colorVarFactory(mapping: { [key: string]: number }) {
 
 // WebGL;
 export function getWebGLCircles() {
-  const webGLSource = new VectorSource({ features: [] });
+  const spotsSource = new VectorSource({ features: [] });
 
   const addData = (coords: { x: number; y: number }[], byRow: { [x: string]: number }[]) =>
-    webGLSource.addFeatures(
+    spotsSource.addFeatures(
       coords.map(({ x, y }, i) => {
         const f = new Feature({
           geometry: new Point([x * params.mPerPx, -y * params.mPerPx]),
@@ -40,13 +40,13 @@ export function getWebGLCircles() {
       })
     );
 
-  return { webGLSource, addData };
+  return { spotsSource, addData };
 }
 
 export function getCanvasCircle(style: Style) {
   const circleFeature = new Feature({ geometry: new Circle([0, 0], params.spotDiam / 2) });
   const circleSource = new VectorSource({ features: [circleFeature] });
-  const circleLayer = new VectorLayer({
+  const activeLayer = new VectorLayer({
     source: circleSource,
     style
   });
@@ -61,5 +61,5 @@ export function getCanvasCircle(style: Style) {
   //       })
   //     );
 
-  return { circleFeature, circleSource, circleLayer };
+  return { circleFeature, circleSource, activeLayer };
 }
