@@ -41,6 +41,7 @@
 
   let curr = 0;
   let draw: Draw;
+  let drawClear: () => void;
 
   if (browser) {
     sourceTiff = new GeoTIFF({
@@ -164,7 +165,7 @@
     map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
     map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
 
-    draw = select(map, webGLSource.getFeatures());
+    ({ draw, drawClear } = select(map, webGLSource.getFeatures()));
     draw.on('drawend', () => (selecting = false));
 
     // draw.on('drawstart', (event: BaseEvent) => {
@@ -222,6 +223,7 @@
 
   $: if (elem) {
     if (selecting) {
+      drawClear();
       map?.addInteraction(draw);
       map.getViewport().style.cursor = 'crosshair';
     } else {
@@ -231,6 +233,7 @@
   }
 </script>
 
+<!-- Buttons -->
 <div class="flex flex-grow flex-col gap-y-6">
   <div class="flex flex-col">
     {#each ['blue', 'green', 'red'] as color, i}
@@ -246,6 +249,7 @@
       </div>
     {/each}
   </div>
+  <!-- Brightness -->
   <div class="flex w-full gap-x-8">
     {#each [0, 1, 2] as i}
       <input
@@ -258,6 +262,7 @@
     {/each}
   </div>
 
+  <!-- Map -->
   <div id="map" class="relative h-[70vh] cursor-grab shadow-lg" bind:this={elem}>
     <!-- Spot indicator -->
     <div
@@ -305,15 +310,25 @@
       max={10}
     />
 
-    <button
-      class="absolute top-[1.05rem] right-[12rem] z-20 rounded bg-sky-700/70 px-2 py-1 text-sm text-slate-200 shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80"
-      class:bg-gray-600={selecting}
-      class:hover:bg-gray-600={selecting}
-      class:active:bg-gray-600={selecting}
-      on:click={() => (selecting = true)}
-      disabled={selecting}
-      >Select
-    </button>
+    <!-- Select button -->
+    <div class="absolute top-[1.05rem] right-[12rem] z-20 space-x-1">
+      <button
+        class="rounded bg-sky-700/70 px-2 py-1 text-sm text-slate-200 shadow backdrop-blur transition-all hover:bg-sky-600/80 active:bg-sky-500/80"
+        class:bg-gray-600={selecting}
+        class:hover:bg-gray-600={selecting}
+        class:active:bg-gray-600={selecting}
+        on:click={() => (selecting = true)}
+        disabled={selecting}
+        >Select
+      </button>
+
+      <button
+        class="rounded bg-orange-700/70 px-2 py-1 text-sm text-slate-200 shadow backdrop-blur transition-all hover:bg-orange-600/80 active:bg-orange-500/80"
+        on:click={drawClear}
+        disabled={selecting}
+        >Clear
+      </button>
+    </div>
   </div>
 </div>
 

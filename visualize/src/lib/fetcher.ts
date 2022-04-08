@@ -27,7 +27,7 @@ export function preprocess(data: AllData<string>) {
   const removed: Omit<AllData<string>, 'coords' | 'by_row'> = { ...data };
   delete removed['coords'];
   delete removed['by_row'];
-  return { data: data as Record<string, number[]>, coords, byRow };
+  return { data: removed as Record<string, number[]>, coords, byRow };
 }
 
 // export function fetchAll() {

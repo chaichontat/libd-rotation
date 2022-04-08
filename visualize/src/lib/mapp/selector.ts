@@ -8,6 +8,7 @@ import { Vector as VectorLayer } from 'ol/layer.js';
 import 'ol/ol.css';
 import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style } from 'ol/style.js';
+import CircleStyle from 'ol/style/Circle';
 import { multipleSelect, params } from '../store';
 
 export function select(map: Map, features: Feature[]) {
@@ -21,7 +22,18 @@ export function select(map: Map, features: Feature[]) {
     // Style for drawing polygons.
     style: new Style({
       fill: new Fill({ color: 'rgba(255, 255, 255, 0.2)' }),
-      stroke: new Stroke({ color: '#00ffe9', width: 2 })
+      stroke: new Stroke({ color: '#00ffe9', width: 2 }),
+      image: new CircleStyle({
+        radius: 6,
+        fill: new Fill({
+          color: [0, 153, 255, 1]
+        }),
+        stroke: new Stroke({
+          color: '#fff',
+          width: 1.5
+        })
+      }),
+      zIndex: Infinity
     }),
     stopClick: true
   });
@@ -30,7 +42,7 @@ export function select(map: Map, features: Feature[]) {
   const drawLayer = new VectorLayer({
     source: drawSource,
     style: new Style({
-      stroke: new Stroke({ color: '#00ffe999', width: 1 })
+      stroke: new Stroke({ color: '#00ffe9', width: 1 })
     })
   });
 
@@ -41,20 +53,22 @@ export function select(map: Map, features: Feature[]) {
   const selectSource = new VectorSource({ features: selectedFeatures });
   const select = new VectorLayer({
     source: selectSource,
-    style: new Style({ stroke: new Stroke({ color: '#67e8f944' }) })
+    style: new Style({ stroke: new Stroke({ color: '#ffffff50' }) })
   });
 
   map.addInteraction(modify);
   map.addInteraction(snap);
 
-  // draw.on('drawstart', (event: DrawEvent) => {
-  //   selectSource.clear();
-  // Interactive: too slow.
-  // event.feature.getGeometry()!.on('change', (e: BaseEvent) => {
-  //   const polygon = e.target as Geometry;
-  //   genCircle(source, features, polygon);
-  // });
-  // });
+  const drawClear = () => {
+    selectSource.clear();
+    drawSource.clear();
+    multipleSelect.set([]);
+    // Interactive: too slow.
+    // event.feature.getGeometry()!.on('change', (e: BaseEvent) => {
+    //   const polygon = e.target as Geometry;
+    //   genCircle(source, features, polygon);
+    // });
+  };
 
   draw.on('drawend', (event: DrawEvent) => {
     event.preventDefault();
@@ -74,7 +88,7 @@ export function select(map: Map, features: Feature[]) {
 
   map.addLayer(drawLayer);
   map.addLayer(select);
-  return draw;
+  return { draw, drawClear };
 }
 
 function genCircle(source: VectorSource, features: Feature[], polygon: Geometry) {
