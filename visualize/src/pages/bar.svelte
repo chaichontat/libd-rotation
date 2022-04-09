@@ -1,10 +1,16 @@
 <script lang="ts">
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
-  import Data from '../lib/fetcher';
+  import type getData from '../lib/fetcher';
   import { multipleSelect, store } from '../lib/store';
 
-  const { byRow, data } = Data;
+  export let dataPromise: ReturnType<typeof getData>;
+  let data: Awaited<typeof dataPromise>['data'];
+
+  (async () => {
+    ({ data } = await dataPromise);
+  })().catch(console.error);
+
   Chart.defaults.font.size = 14;
 
   let bar: Chart<'bar', Record<string, number>, string>;
@@ -15,7 +21,7 @@
       data: {
         datasets: [
           {
-            data: byRow[0],
+            data: {},
             backgroundColor: 'white',
             normalized: true
           }
@@ -44,23 +50,31 @@
     });
   });
 
+  function getRow<T extends string>(data: Record<T, number[]>, i: number) {
+    return Object.keys(data).reduce((acc, key) => {
+      acc[key as T] = data[key as T][i];
+      return acc;
+    }, {} as Record<T, number>);
+  }
+
   $: {
-    if (bar && $multipleSelect.length === 0) {
+    if (data && bar && $multipleSelect.length === 0) {
       if ($store.lockedIdx.idx !== -1) {
         // Locked
-        bar.data.datasets[0].data = byRow[$store.lockedIdx.idx];
+        bar.data.datasets[0].data = getRow(data, $store.lockedIdx.idx);
       } else {
-        bar.data.datasets[0].data = byRow[$store.currIdx.idx];
+        bar.data.datasets[0].data = getRow(data, $store.currIdx.idx);
       }
       bar.options.scales!.y!.max = 10;
       bar.update();
     }
   }
 
-  $: if (bar && $multipleSelect.length > 0) {
+  $: if (data && bar && $multipleSelect.length > 0) {
     const summed = Object.keys(data).reduce((acc, key) => {
-      return { ...acc, [key]: $multipleSelect.map((v) => data[key][v]).reduce((a, b) => a + b, 0) };
-    }, {} as typeof byRow[0]);
+      acc[key] = $multipleSelect.map((v) => data[key][v]).reduce((a, b) => a + b, 0);
+      return acc;
+    }, {} as ReturnType<typeof getRow>);
     bar.data.datasets[0].data = summed;
     bar.options.scales!.y!.max = undefined;
     bar.update();

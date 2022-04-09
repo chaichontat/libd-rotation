@@ -16,7 +16,7 @@
   import { onMount } from 'svelte';
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
-  import Data from '../lib/fetcher';
+  import type getData from '../lib/fetcher';
   import { select } from '../lib/mapp/selector';
   import { currRna, params, store } from '../lib/store';
 
@@ -25,9 +25,11 @@
   export let proteinMap: { [key: string]: number };
   let selecting = false;
   const proteins = Object.keys(proteinMap);
-
+  export let dataPromise: ReturnType<typeof getData>;
   const getColorParams = colorVarFactory(proteinMap);
-  const { coords, byRow } = Data;
+
+  let coords: Awaited<typeof dataPromise>['coords'];
+  let byRow: Awaited<typeof dataPromise>['byRow'];
 
   let bgLayer: TileLayer;
   let sourceTiff: GeoTIFF;
@@ -97,7 +99,10 @@
   let { spotsSource, addData } = getWebGLCircles();
   let spotsLayer: WebGLPointsLayer<VectorSource<Point>>;
 
-  addData(coords, byRow);
+  (async () => {
+    ({ coords, byRow } = await dataPromise);
+    addData(coords, byRow);
+  })().catch(console.error);
 
   onMount(() => {
     spotsLayer = new WebGLPointsLayer({
@@ -137,6 +142,7 @@
 
     // Hover over a circle.
     map.on('pointermove', (e) => {
+      // Cannot use layer.getFeatures for WebGL.
       map.forEachFeatureAtPixel(
         e.pixel,
         (f) => {
@@ -144,9 +150,9 @@
           if (idx === curr || !idx) return true;
           $store.currIdx = { idx, source: 'map' }; // As if came from outside.
           curr = idx;
-          return true;
+          return true; // Terminates search.
         },
-        { layerFilter: (layer) => layer === spotsLayer }
+        { layerFilter: (layer) => layer === spotsLayer, hitTolerance: 10 }
       );
     });
 
@@ -189,7 +195,7 @@
 
   // Move view
   $: {
-    if (map) {
+    if (map && coords) {
       const idx = $store.locked ? $store.lockedIdx : $store.currIdx;
       const { x, y } = coords[idx.idx];
       if ($store.currIdx.source !== 'map') {
@@ -222,7 +228,7 @@
 </script>
 
 <!-- Buttons -->
-<div class="flex flex-grow flex-col gap-y-6">
+<div class="flex flex-grow flex-col gap-y-3">
   <div class="flex flex-col">
     {#each ['blue', 'green', 'red'] as color, i}
       <div class="flex gap-x-4">
@@ -251,7 +257,7 @@
   </div>
 
   <!-- Map -->
-  <div id="map" class="relative h-[70vh] cursor-grab shadow-lg" bind:this={elem}>
+  <div id="map" class="relative h-[70vh] shadow-lg" bind:this={elem}>
     <!-- Spot indicator -->
     <div
       class="absolute left-14 top-[1.2rem] z-10 text-lg font-medium text-white opacity-90 xl:text-xl"

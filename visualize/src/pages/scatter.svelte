@@ -2,35 +2,50 @@
   import ButtonGroup from '$src/lib/components/buttonGroup.svelte';
   import Colorbar from '$src/lib/components/colorbar.svelte';
   import Chart, { type ChartConfiguration, type ChartEvent } from 'chart.js/auto/auto.js';
+  import ChartDataLabels from 'chartjs-plugin-datalabels';
   import colormap from 'colormap';
   import { onMount } from 'svelte';
-  import Data, { dataProcess } from '../lib/fetcher';
+  import type getData from '../lib/fetcher';
   import { currRna, store } from '../lib/store';
   import { genLRU } from '../lib/utils';
-  import ChartDataLabels from 'chartjs-plugin-datalabels';
-
   let curr = 0;
 
-  const { data, coords } = Data;
-  const { cellTypes } = dataProcess(data);
+  export let dataPromise: ReturnType<typeof getData>;
+
+  let data: Awaited<typeof dataPromise>['data'];
+  let coords: Awaited<typeof dataPromise>['coords'];
+  let myChart: Chart<'scatter', { x: number; y: number }[], string>;
+  let getColor: (name: string) => string[];
+
   const colors = colormap({ colormap: 'viridis', nshades: 256, format: 'hex' });
 
-  $currRna = cellTypes[0];
-  let myChart: Chart<'scatter', { x: number; y: number }[], string>;
+  async function hydrate(dataPromise: ReturnType<typeof getData>) {
+    ({ data, coords } = await dataPromise);
+    getColor = genLRU((name: string): string[] => {
+      return data[name].map((v) => colors[Math.round(Math.min(v / 10, 1) * 255)]);
+    });
 
-  const min = coords
-    .reduce((acc, { x, y }) => [Math.min(acc[0], x), Math.min(acc[1], y)], [Infinity, Infinity])
-    .map((x) => x - 100);
-  const max = coords
-    .reduce((acc, { x, y }) => [Math.max(acc[0], x), Math.max(acc[1], y)], [0, 0])
-    .map((x) => x + 100);
+    const min = coords
+      .reduce((acc, { x, y }) => [Math.min(acc[0], x), Math.min(acc[1], y)], [Infinity, Infinity])
+      .map((x) => x - 100);
+    const max = coords
+      .reduce((acc, { x, y }) => [Math.max(acc[0], x), Math.max(acc[1], y)], [0, 0])
+      .map((x) => x + 100);
 
-  const getColor = genLRU((name: string): string[] =>
-    data[name].map((v) => colors[Math.round(Math.min(v / 10, 1) * 255)])
-  );
+    for (const c of [myChart, anotherChart]) {
+      c.options.scales!.x!.min = min[0] - 100;
+      c.options.scales!.x!.max = max[0] + 100;
+      c.options.scales!.y!.min = min[1] - 100;
+      c.options.scales!.y!.max = max[1] + 100;
+      c.update();
+    }
+
+    myChart.data.datasets[0].data = coords;
+    $currRna = Object.keys(data)[0];
+  }
 
   function changeColor(chart: Chart, name: string): void {
-    if (!chart) return;
+    if (!chart || !getColor) return;
     chart.data.datasets[0].backgroundColor = getColor(name);
     chart.update();
   }
@@ -40,16 +55,10 @@
     aspectRatio: 1,
     scales: {
       x: {
-        min: min[0],
-        max: max[0],
-        grid: { display: false },
-        ticks: { display: false }
+        display: false
       },
       y: {
-        min: min[1],
-        max: max[1],
-        grid: { display: false },
-        ticks: { display: false },
+        display: false,
         reverse: true
       }
     },
@@ -69,8 +78,7 @@
         data: {
           datasets: [
             {
-              data: coords.slice(0, 1),
-              backgroundColor: getColor($currRna)[0],
+              data: [],
               normalized: true,
               pointRadius: 25,
               pointHoverRadius: 25,
@@ -136,8 +144,6 @@
             {
               type: 'scatter',
               data: coords,
-              // @ts-ignore
-              backgroundColor: getColor($currRna),
               normalized: true,
               pointRadius: 2.5,
               pointHoverRadius: 20,
@@ -150,13 +156,18 @@
         options: chartOptions
       }
     );
+
+    hydrate(dataPromise).catch(console.error);
   });
+
+  // myChart.data.datasets[0].data = coords
+  // anotherChart.data.datasets[0].data = [coords[0]];
 
   // Change color for different markers.
   $: changeColor(myChart, $currRna);
 
   // Decision on what to show.
-  $: if (anotherChart) {
+  $: if (coords && anotherChart) {
     const idx = $store.locked ? $store.lockedIdx.idx : $store.currIdx.idx;
     anotherChart.data.datasets[0].data = [coords[idx]];
     anotherChart.data.datasets[0].backgroundColor = getColor($currRna)[idx] + 'cc';
@@ -164,8 +175,11 @@
   }
 </script>
 
-<ButtonGroup names={cellTypes} color="slate" bind:curr={$currRna} />
-<div class="relative">
+{#if data}
+  <ButtonGroup names={Object.keys(data)} color="slate" bind:curr={$currRna} />
+{/if}
+
+<div class="relative z-10">
   <Colorbar min={0} max={10} />
   <canvas class="absolute" id="another" />
   <canvas class="" id="myChart" />

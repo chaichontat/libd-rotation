@@ -32,7 +32,7 @@
         }`;
 
       default:
-        console.error('Incorrect color');
+        throw 'Incorrect color';
     }
   }
 </script>

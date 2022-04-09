@@ -1,7 +1,27 @@
-<script>
+<script lang="ts">
+  import { browser } from '$app/env';
+  import getData from '../lib/fetcher';
   import Mapp from '../pages/mapp.svelte';
   import Rna from '../pages/rna.svelte';
+
   const sample = 'Br6522_Ant_IF';
+  const to_fetch = [
+    'Astro',
+    'Endo',
+    'Excit',
+    'Inhib',
+    'Macrophage',
+    'Micro',
+    'Mural',
+    'Neu',
+    'OPC',
+    'Oligo',
+    'Tcell',
+    'OLIG2',
+    'Oligo',
+    'RBFOX3',
+    'TMEM119'
+  ] as const;
 
   const proteinMap = {
     DAPI: 2,
@@ -12,6 +32,9 @@
     Lipofuschin: 1,
     None: 7
   };
+
+  let dataPromise: ReturnType<typeof getData>;
+  if (browser) dataPromise = getData(sample, to_fetch);
 </script>
 
 <svelte:head><title>Visium IF</title></svelte:head>
@@ -30,8 +53,8 @@
 </div>
 
 <main class="flex flex-wrap gap-x-6 md:flex-nowrap">
-  <Mapp {sample} {proteinMap} />
-  <Rna />
+  <Mapp {sample} {proteinMap} {dataPromise} />
+  <Rna {dataPromise} />
 </main>
 
 <style lang="postcss">
