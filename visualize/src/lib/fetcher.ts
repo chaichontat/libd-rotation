@@ -25,23 +25,24 @@
 //   return { data, coords, byRow: by_row };
 // }
 
-export async function fetchAll<T extends string>(sample: string, to_fetch: readonly T[]) {
-  const promises = to_fetch.map(
-    (name) => fetch(`/${sample}/${name}.json`).then((r) => r.json()) as Promise<number[]>
-  );
-  const coords = fetch(`/${sample}/coords.json`).then(
-    (r) => r.json() as Promise<{ x: number; y: number }[]>
-  );
-  const byRow = fetch(`/${sample}/by_row.json`).then(
-    (r) => r.json() as Promise<Record<T, number>[]>
+import { tableFromIPC } from 'apache-arrow';
+
+export async function fetchAll(sample: string) {
+  const [table, coordsTable] = await Promise.all(
+    [`/${sample}/data.arrow`, `/${sample}/coords.arrow`].map(async (url) =>
+      fetch(url).then((r) => tableFromIPC(r))
+    )
   );
 
-  const data = (await Promise.all(promises)).reduce(
-    (acc, v, i) => ({ ...acc, [to_fetch[i]]: v }),
-    {} as Record<T, number[]>
-  );
+  const data = {} as Record<string, Float32Array>;
+  for (const name of table.schema.names) {
+    data[name as string] = table.getChild(name)!.toArray() as Float32Array;
+  }
 
-  return { data, coords: await coords, byRow: await byRow };
+  const coords = coordsTable.toArray().map((row) => row!.toJSON()) as { x: number; y: number }[];
+  const byRow = table.toArray().map((row) => row!.toJSON());
+
+  return { data, coords, byRow };
 }
 
 export function dataProcess<T extends string>(data: Record<T, number[]>) {

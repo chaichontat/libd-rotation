@@ -1,5 +1,6 @@
 **.tif
 **.tiff
+**.arrow
 visualize/static/**/*.json
 .vscode/
 **.RData

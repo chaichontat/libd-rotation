@@ -22,7 +22,12 @@
   async function hydrate(dataPromise: ReturnType<typeof getData>) {
     ({ data, coords } = await dataPromise);
     getColor = genLRU((name: string): string[] => {
-      return data[name].map((v) => colors[Math.round(Math.min(v / 10, 1) * 255)]);
+      const out = [];
+      for (const d of data[name]) {
+        const idx = Math.round(Math.min(d / 10, 1) * 255);
+        out.push(colors[idx]);
+      }
+      return out;
     });
 
     const min = coords
@@ -92,11 +97,11 @@
           plugins: {
             ...chartOptions.plugins,
             datalabels: {
-              formatter: () => data[$currRna][$store.currIdx.idx],
+              formatter: () => data[$currRna][$store.currIdx.idx].toFixed(2),
               align: 'end',
               anchor: 'end',
               offset: 2,
-              color: 'rgb(226 232 240)',
+              color: '#A8A29E',
               font: { size: 14 }
             }
           },

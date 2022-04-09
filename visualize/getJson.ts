@@ -5,27 +5,7 @@ import * as path from 'path';
 const dir = 'static';
 const sample = 'Br6522_Ant_IF';
 
-const s3_url = 'https://chaichontat-host.s3.amazonaws.com/libd-rotation';
-
-const to_fetch = [
-  'Astro',
-  'Endo',
-  'Excit',
-  'Inhib',
-  'Macrophage',
-  'Micro',
-  'Mural',
-  'Neu',
-  'OPC',
-  'Oligo',
-  'Tcell',
-  'by_row',
-  'coords',
-  'OLIG2',
-  'Oligo',
-  'RBFOX3',
-  'TMEM119'
-];
+const s3_url = 'https://f004.backblazeb2.com/file/chaichontat-host/libd-rotation';
 
 async function getFiles(p: string, urls: string[]): Promise<Promise<void>[]> {
   await fs.mkdir(p, { recursive: true });
@@ -44,7 +24,7 @@ async function getFiles(p: string, urls: string[]): Promise<Promise<void>[]> {
 async function run() {
   const jsons = await getFiles(
     path.join(dir, sample),
-    to_fetch.map((name) => `${s3_url}/${sample}/${name}.json`)
+    ['coords', 'data'].map((name) => `${s3_url}/${sample}/${name}.arrow`)
   );
   const fonts = await getFiles(path.join(dir, 'fonts'), [
     'https://rsms.me/inter/font-files/Inter-italic.var.woff2',

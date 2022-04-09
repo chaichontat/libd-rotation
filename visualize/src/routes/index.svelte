@@ -5,24 +5,6 @@
   import Rna from '../pages/rna.svelte';
 
   const sample = 'Br6522_Ant_IF';
-  const to_fetch = [
-    'Astro',
-    'Endo',
-    'Excit',
-    'Inhib',
-    'Macrophage',
-    'Micro',
-    'Mural',
-    'Neu',
-    'OPC',
-    'Oligo',
-    'Tcell',
-    'OLIG2',
-    'Oligo',
-    'RBFOX3',
-    'TMEM119'
-  ] as const;
-
   const proteinMap = {
     DAPI: 2,
     TMEM119: 6,
@@ -34,7 +16,7 @@
   };
 
   let dataPromise: ReturnType<typeof getData>;
-  if (browser) dataPromise = getData(sample, to_fetch);
+  if (browser) dataPromise = getData(sample);
 </script>
 
 <svelte:head><title>Visium IF</title></svelte:head>
