@@ -1,4 +1,5 @@
 import type { Map } from 'ol';
+import type BaseEvent from 'ol/events/Event';
 import Feature from 'ol/Feature.js';
 import { Circle, Geometry, Point } from 'ol/geom.js';
 import { Modify, Snap } from 'ol/interaction.js';
@@ -10,6 +11,7 @@ import VectorSource from 'ol/source/Vector.js';
 import { Fill, Stroke, Style } from 'ol/style.js';
 import CircleStyle from 'ol/style/Circle.js';
 import { multipleSelect, params } from '../store';
+import { debounce } from '../utils';
 
 export function select(map: Map, features: Feature[]) {
   const drawSource = new VectorSource();
@@ -63,12 +65,17 @@ export function select(map: Map, features: Feature[]) {
     selectSource.clear();
     drawSource.clear();
     multipleSelect.set([]);
-    // Interactive: too slow.
-    // event.feature.getGeometry()!.on('change', (e: BaseEvent) => {
-    //   const polygon = e.target as Geometry;
-    //   genCircle(source, features, polygon);
-    // });
   };
+
+  draw.on('drawstart', (event: DrawEvent) => {
+    event.feature.getGeometry()!.on(
+      'change',
+      debounce((e: BaseEvent) => {
+        const polygon = e.target as Geometry;
+        genCircle(selectSource, features, polygon);
+      }, 10)
+    );
+  });
 
   draw.on('drawend', (event: DrawEvent) => {
     event.preventDefault();
