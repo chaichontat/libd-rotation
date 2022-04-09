@@ -3,7 +3,7 @@
   import { base } from '$app/paths';
   import { colorVarFactory, getCanvasCircle, getWebGLCircles } from '$src/lib/mapp/maplib';
   import { ScaleLine, Zoom } from 'ol/control.js';
-  import type { Point } from 'ol/geom.js';
+  import type { Geometry, Point } from 'ol/geom.js';
   import type { Draw } from 'ol/interaction.js';
   import WebGLPointsLayer from 'ol/layer/WebGLPoints.js';
   import TileLayer from 'ol/layer/WebGLTile.js';
@@ -99,10 +99,15 @@
   let { spotsSource, addData } = getWebGLCircles();
   let spotsLayer: WebGLPointsLayer<VectorSource<Point>>;
 
-  (async () => {
+  async function hydrate(
+    dataPromise: ReturnType<typeof getData>,
+    spotsSource: VectorSource<Geometry>
+  ) {
     ({ coords, byRow } = await dataPromise);
     addData(coords, byRow);
-  })().catch(console.error);
+    ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
+    draw.on('drawend', () => (selecting = false));
+  }
 
   onMount(() => {
     spotsLayer = new WebGLPointsLayer({
@@ -171,8 +176,7 @@
     map.on('movestart', () => (map.getViewport().style.cursor = 'grabbing'));
     map.on('moveend', () => (map.getViewport().style.cursor = 'grab'));
 
-    ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
-    draw.on('drawend', () => (selecting = false));
+    hydrate(dataPromise, spotsSource).catch(console.error);
   });
 
   // Update "brightness"
