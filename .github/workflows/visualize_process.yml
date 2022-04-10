@@ -43,6 +43,7 @@ jobs:
           cache-downloads: true
           cache-env: true
           environment-file: visualize/conda-lock.yml
+          environment-name: rasterio
 
       - name: Test run
         run: |
