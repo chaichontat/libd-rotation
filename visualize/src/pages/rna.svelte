@@ -7,7 +7,7 @@
 </script>
 
 <section class="flex flex-grow flex-col gap-y-2">
-  <div class="mt-2 flex w-[50vw] max-w-[600px] flex-col">
+  <div class="flex w-[50vw] max-w-[600px] flex-col">
     <Scatter {dataPromise} />
     <Bar {dataPromise} />
   </div>

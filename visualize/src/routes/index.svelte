@@ -19,18 +19,18 @@
   if (browser) dataPromise = getData(sample);
 </script>
 
-<svelte:head><title>Visium IF</title></svelte:head>
+<svelte:head><title>Le pied Browser</title></svelte:head>
 
 <div class="flex justify-between">
   <div class="display-inline">
-    <h1 class="order-1 mb-2 text-3xl font-bold text-white md:text-4xl md:leading-none">
-      Visium <span class="fancy">IF</span>
+    <h1 class="order-1 mb-2 font-[Cera] text-3xl font-bold leading-7 text-white md:text-4xl">
+      <span class="tracking-tight text-yellow-400">Le pied</span> Browser
     </h1>
-    <h3 class="mb-6 text-sm text-slate-100 lg:text-lg">Sample: {sample}</h3>
+    <h3 class="mb-6 text-sm text-slate-100 lg:text-base">Sample: {sample}</h3>
   </div>
 
   <div class="flex gap-x-4 text-right leading-6 text-slate-200">
-    <p class="text-sm lg:text-base">
+    <p class="text-sm xl:text-base">
       Hover at any spots to see cell type inference/transcriptomic data.<br />Click to lock spot.
       Click on the same spot to unlock.
     </p>
@@ -60,9 +60,3 @@
   <Mapp {sample} {proteinMap} {dataPromise} />
   <Rna {dataPromise} />
 </main>
-
-<style lang="postcss">
-  .fancy {
-    @apply bg-gradient-to-tl from-purple-500 via-purple-600 to-yellow-600  bg-clip-text font-extrabold text-transparent;
-  }
-</style>

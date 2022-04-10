@@ -16,10 +16,16 @@
   font-named-instance: 'Italic';
 }
 
+@font-face {
+  font-family: 'Cera';
+  font-style: bold;
+  src: url('../static/fonts/cera.woff') format('woff');
+}
+
 @tailwind base;
 @layer base {
   html {
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter var', sans-serif;
   }
   body {
     @apply bg-gray-900;

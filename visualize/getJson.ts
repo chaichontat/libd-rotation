@@ -27,6 +27,7 @@ async function run() {
     ['coords', 'data'].map((name) => `${s3_url}/${sample}/${name}.arrow`)
   );
   const fonts = await getFiles(path.join(dir, 'fonts'), [
+    'https://f004.backblazeb2.com/file/chaichontat-host/libd-rotation/cera.woff',
     'https://rsms.me/inter/font-files/Inter-italic.var.woff2',
     'https://rsms.me/inter/font-files/Inter-roman.var.woff2'
   ]);
