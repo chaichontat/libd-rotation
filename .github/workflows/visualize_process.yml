@@ -2,6 +2,8 @@ name: Run Visualize Workflow
 
 on:
   push:
+    branches:
+      - main
   pull_request:
   release:
 
@@ -41,7 +43,6 @@ jobs:
           cache-downloads: true
           cache-env: true
           environment-file: visualize/conda-lock.yml
-          environment-name: rasterio
 
       - name: Test run
         run: |
