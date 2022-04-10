@@ -31,8 +31,9 @@ jobs:
       - name: Cache data
         uses: actions/cache@v2
         with:
+          key: ${{ runner.os }}
           path: |
-            data
+            visualize/data
 
       - name: Install Conda environment
         uses: mamba-org/provision-with-micromamba@main
