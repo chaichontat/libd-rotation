@@ -23,7 +23,7 @@
 
 <div class="flex justify-between">
   <div class="display-inline">
-    <h1 class="order-1 mb-2 font-[Cera] text-3xl font-bold leading-7 text-white md:text-4xl">
+    <h1 class="order-1 mb-1 font-[Cera] text-3xl font-bold leading-7 text-white md:text-4xl">
       <span class="tracking-tight text-yellow-400">Le pied</span> Browser
     </h1>
     <h3 class="mb-6 text-sm text-slate-100 lg:text-base">Sample: {sample}</h3>
