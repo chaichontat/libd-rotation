@@ -111,6 +111,10 @@
         {/if}
       </div>
     {/if}
+
+    <div class="mr-2 translate-y-2 self-end text-lg font-medium">
+      Showing <i>{$currRna.name}</i>.
+    </div>
     <Scatter {dataPromise} />
     <Bar {dataPromise} />
   </div>
