@@ -1,12 +1,12 @@
 import LRU from 'lru-cache';
 
 export function genLRU<K extends unknown[], V>(f: (...args: K) => V) {
-  const cache = new LRU<K, V>({ max: 100 });
+  const cache = new LRU<string, V>({ max: 100 });
   return (...args: K): V => {
-    if (cache.has(args)) return cache.get(args) as V; // Checked
-
+    const key = JSON.stringify(args);
+    if (cache.has(key)) return cache.get(key) as V; // Checked
     const r = f(...args);
-    cache.set(args, r);
+    cache.set(key, r);
     return r;
   };
 }
