@@ -1,4 +1,6 @@
 <script lang="ts">
+  import { browser } from '$app/env';
+
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
   import type getData from '../lib/fetcher';
@@ -15,6 +17,7 @@
 
   let bar: Chart<'bar', Record<string, number>, string>;
   onMount(() => {
+    if (!browser) return;
     const ctx = (document.getElementById('bar') as HTMLCanvasElement).getContext('2d')!;
     bar = new Chart(ctx, {
       type: 'bar',

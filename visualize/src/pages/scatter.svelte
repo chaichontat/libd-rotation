@@ -12,7 +12,6 @@
 
   export let dataPromise: ReturnType<typeof getData>;
 
-  let data: Awaited<typeof dataPromise>['data'];
   let coords: Awaited<typeof dataPromise>['coords'];
   let myChart: Chart<'scatter', { x: number; y: number }[], string>;
   let getColor: (name: string) => string[];
@@ -20,10 +19,10 @@
   const colors = colormap({ colormap: 'viridis', nshades: 256, format: 'hex' });
 
   async function hydrate(dataPromise: ReturnType<typeof getData>) {
-    ({ data, coords } = await dataPromise);
+    ({ coords } = await dataPromise);
     getColor = genLRU((name: string): string[] => {
       const out = [];
-      for (const d of data[name]) {
+      for (const d of $currRna.values) {
         const idx = Math.round(Math.min(d / 10, 1) * 255);
         out.push(colors[idx]);
       }
@@ -46,7 +45,7 @@
     }
 
     myChart.data.datasets[0].data = coords;
-    $currRna = Object.keys(data)[0];
+    // $currRna = Object.keys(data)[0];
   }
 
   function changeColor(chart: Chart, name: string): void {
@@ -97,7 +96,7 @@
           plugins: {
             ...chartOptions.plugins,
             datalabels: {
-              formatter: () => data[$currRna][$store.currIdx.idx].toFixed(2),
+              formatter: () => $currRna.values[$store.currIdx.idx]?.toFixed(2) ?? '',
               align: 'end',
               anchor: 'end',
               offset: 2,
@@ -165,24 +164,21 @@
     hydrate(dataPromise).catch(console.error);
   });
 
-  // myChart.data.datasets[0].data = coords
-  // anotherChart.data.datasets[0].data = [coords[0]];
-
   // Change color for different markers.
-  $: changeColor(myChart, $currRna);
+  $: changeColor(myChart, $currRna.name);
 
   // Decision on what to show.
   $: if (coords && anotherChart) {
     const idx = $store.locked ? $store.lockedIdx.idx : $store.currIdx.idx;
     anotherChart.data.datasets[0].data = [coords[idx]];
-    anotherChart.data.datasets[0].backgroundColor = getColor($currRna)[idx] + 'cc';
+    anotherChart.data.datasets[0].backgroundColor = getColor($currRna.name)[idx] + 'cc';
     anotherChart.update();
   }
 </script>
 
-{#if data}
+<!-- {#if data}
   <ButtonGroup names={Object.keys(data)} color="slate" bind:curr={$currRna} />
-{/if}
+{/if} -->
 
 <div class="relative z-10">
   <Colorbar min={0} max={10} />

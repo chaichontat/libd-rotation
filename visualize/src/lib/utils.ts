@@ -11,10 +11,29 @@ export function genLRU<K extends unknown[], V>(f: (...args: K) => V) {
   };
 }
 
-export function debounce<T extends unknown[]>(f: (...args: T) => void, timeout = 300) {
+export function debounce<T extends unknown[]>(
+  f: (...args: T) => void | Promise<unknown>,
+  timeout = 300
+) {
   let timer: ReturnType<typeof setTimeout> | undefined;
   return (...args: T) => {
     if (timer) clearTimeout(timer);
     timer = setTimeout(() => f(...args), timeout);
+  };
+}
+
+export function clickOutside(node: HTMLElement) {
+  const handleClick = (event: MouseEvent) => {
+    if (node && !node.contains(event.target) && !event.defaultPrevented) {
+      node.dispatchEvent(new CustomEvent('outclick'));
+    }
+  };
+
+  document.addEventListener('click', handleClick, true);
+
+  return {
+    destroy() {
+      document.removeEventListener('click', handleClick, true);
+    }
   };
 }
