@@ -28,12 +28,12 @@ export function colorVarFactory(mapping: { [key: string]: number }) {
 export function getWebGLCircles() {
   const spotsSource = new VectorSource({ features: [] });
 
-  const addData = (coords: { x: number; y: number }[], byRow: { [x: string]: number }[]) =>
+  const addData = (coords: { x: number; y: number }[]) =>
     spotsSource.addFeatures(
       coords.map(({ x, y }, i) => {
         const f = new Feature({
           geometry: new Point([x * params.mPerPx, -y * params.mPerPx]),
-          ...byRow[i]
+          value: 0
         });
         f.setId(i);
         return f;

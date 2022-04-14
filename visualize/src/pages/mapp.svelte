@@ -29,7 +29,6 @@
   const getColorParams = colorVarFactory(proteinMap);
 
   let coords: Awaited<typeof dataPromise>['coords'];
-  let byRow: Awaited<typeof dataPromise>['byRow'];
 
   let bgLayer: TileLayer;
   let sourceTiff: GeoTIFF;
@@ -67,7 +66,7 @@
 
   const spot_px = params.spotDiam / params.mPerPx;
 
-  const genStyle = (rna: string): LiteralStyle => ({
+  const genStyle = (): LiteralStyle => ({
     variables: { opacity: 0.5 },
     symbol: {
       symbolType: 'circle',
@@ -89,7 +88,7 @@
       color: '#fce652ff',
 
       // color: ['interpolate', ['linear'], ['get', rna], 0, '#00000000', 8, '#fce652ff'],
-      opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', rna], 8]], 0.1, 1]
+      opacity: ['clamp', ['*', ['var', 'opacity'], ['/', ['get', 'value'], 8]], 0.1, 1]
       // opacity: ['clamp', ['var', 'opacity'], 0.05, 1]
     }
   });
@@ -103,8 +102,8 @@
     dataPromise: ReturnType<typeof getData>,
     spotsSource: VectorSource<Geometry>
   ) {
-    ({ coords, byRow } = await dataPromise);
-    addData(coords, byRow);
+    ({ coords } = await dataPromise);
+    addData(coords);
     ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
     draw.on('drawend', () => (selecting = false));
   }
@@ -113,7 +112,7 @@
     spotsLayer = new WebGLPointsLayer({
       // @ts-expect-error
       source: spotsSource,
-      style: genStyle($currRna)
+      style: genStyle()
     });
 
     bgLayer = new TileLayer({
@@ -184,17 +183,13 @@
   $: spotsLayer?.updateStyleVariables({ opacity: colorOpacity });
 
   // Change spot color
-  $: if (spotsLayer) {
-    const previousLayer = spotsLayer;
-    spotsLayer = new WebGLPointsLayer({
-      // @ts-expect-error
-      source: spotsSource,
-      style: genStyle($currRna)
-    });
-
-    map.addLayer(spotsLayer);
-    map.removeLayer(previousLayer);
-    previousLayer.dispose();
+  $: if (spotsLayer && coords) {
+    for (let i = 0; i < coords.length; i++) {
+      spotsLayer
+        .getSource()!
+        .getFeatureById(i)
+        ?.setProperties({ value: $currRna.values[i] ?? 0 });
+    }
   }
 
   // Move view
@@ -208,7 +203,7 @@
         if ($store.locked) {
           view.animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100, zoom: 5 });
         } else if (currZoom && currZoom > 2) {
-          view.animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100 });
+          view.animate({ duration: 100 });
         }
       }
       circleFeature?.getGeometry()?.setCenter([x * params.mPerPx, -y * params.mPerPx]);
@@ -229,10 +224,20 @@
       map.getViewport().style.cursor = 'grab';
     }
   }
+
+  function upload(files: FileList | null) {
+    if (files) {
+      console.log(URL.createObjectURL(files[0]));
+    }
+  }
 </script>
 
 <!-- Buttons -->
 <div class="flex flex-grow flex-col gap-y-3">
+  <!-- <label>
+    <input type="file" multiple on:change={(e) => upload(e.currentTarget.files)} />
+  </label> -->
+
   <div class="flex flex-col">
     {#each ['blue', 'green', 'red'] as color, i}
       <div class="flex gap-x-4">
@@ -266,7 +271,7 @@
     <div
       class="absolute left-14 top-[1.2rem] z-10 text-lg font-medium text-white opacity-90 xl:text-xl"
     >
-      Spots: {$currRna}
+      Spots: <i>{@html $currRna.name}</i>
     </div>
 
     <!-- Color indicator -->

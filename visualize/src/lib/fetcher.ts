@@ -24,8 +24,10 @@
 
 //   return { data, coords, byRow: by_row };
 // }
-
+import { browser } from '$app/env';
 import { tableFromIPC } from 'apache-arrow';
+import pako from 'pako';
+import { genLRU } from './utils';
 
 export async function fetchAll(sample: string) {
   const [table, coordsTable] = await Promise.all(
@@ -40,9 +42,8 @@ export async function fetchAll(sample: string) {
   }
 
   const coords = coordsTable.toArray().map((row) => row!.toJSON()) as { x: number; y: number }[];
-  const byRow = table.toArray().map((row) => row!.toJSON());
 
-  return { data, coords, byRow };
+  return { data, coords };
 }
 
 export function dataProcess<T extends string>(data: Record<T, number[]>) {
@@ -56,6 +57,51 @@ export function dataProcess<T extends string>(data: Record<T, number[]>) {
     maxs.push(Math.max(...data[k as T]));
   }
   return { idxs, maxs, cellTypes };
+}
+
+// Compressed Columns
+export function genRetrieve(ptr: number[], names: { [key: string]: number }, len: number) {
+  const zero = Array(len).fill(0) as number[];
+
+  return genLRU(async (selected: string): Promise<number[]> => {
+    if (ptr[names[selected]] === ptr[names[selected] + 1]) {
+      return zero;
+    }
+    // console.log(`bytes=${ptr[names[selected]]}-${ptr[names[selected] + 1] - 1}`);
+    return await fetch(
+      'https://chaichontat-host.s3.amazonaws.com/libd-rotation/Br6522_Ant_IF/Counts_Br6522_Ant_IF.dump',
+      { headers: { Range: `bytes=${ptr[names[selected]]}-${ptr[names[selected] + 1] - 1}` } }
+    )
+      .then((res) => res.blob())
+      .then((blob) => decompressBlob(blob))
+      .then((arr) => JSON.parse(arr) as Sparse)
+      .then((sparse) => genDense(sparse, len));
+  });
+}
+
+export type Sparse = { index: number[]; value: number[] };
+
+export const decompressBlob =
+  browser && 'CompressionStream' in window // Chromium
+    ? async (blob: Blob) => {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+        const ds = new DecompressionStream('gzip');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call
+        const decompressedStream = blob.stream().pipeThrough(ds);
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        return await new Response(decompressedStream).text();
+      }
+    : async (blob: Blob): Promise<string> => {
+        //@ts-ignore
+        return pako.inflate(await blob.arrayBuffer(), { to: 'string' });
+      };
+
+export function genDense(obj: Sparse, len: number): number[] {
+  const dense = new Array(len).fill(0) as number[];
+  for (let i = 0; i < obj.index.length; i++) {
+    dense[obj.index[i]] = obj.value[i];
+  }
+  return dense;
 }
 
 export default fetchAll;

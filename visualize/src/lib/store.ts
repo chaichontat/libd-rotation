@@ -16,7 +16,10 @@ export const store: Writable<State> = writable({
   }
 });
 
-export const currRna: Writable<string> = writable('');
+export const currRna: Writable<{ name: string; values: number[] }> = writable({
+  name: '',
+  values: []
+});
 
 export const multipleSelect: Writable<number[]> = writable([]);
 

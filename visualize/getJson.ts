@@ -24,7 +24,9 @@ async function getFiles(p: string, urls: string[]): Promise<Promise<void>[]> {
 async function run() {
   const jsons = await getFiles(
     path.join(dir, sample),
-    ['coords', 'data'].map((name) => `${s3_url}/${sample}/${name}.arrow`)
+    ['coords.arrow', 'data.arrow', 'ptr.json', 'names.json'].map(
+      (name) => `${s3_url}/${sample}/${name}`
+    )
   );
   const fonts = await getFiles(path.join(dir, 'fonts'), [
     'https://f004.backblazeb2.com/file/chaichontat-host/libd-rotation/cera.woff',

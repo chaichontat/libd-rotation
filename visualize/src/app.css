@@ -28,7 +28,7 @@
     font-family: 'Inter var', sans-serif;
   }
   body {
-    @apply bg-gray-900;
+    @apply bg-gray-900 text-slate-100;
   }
 }
 @tailwind components;
