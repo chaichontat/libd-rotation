@@ -203,7 +203,7 @@
         if ($store.locked) {
           view.animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100, zoom: 5 });
         } else if (currZoom && currZoom > 2) {
-          view.animate({ center: [x * params.mPerPx, -y * params.mPerPx], duration: 100 });
+          view.animate({ duration: 100 });
         }
       }
       circleFeature?.getGeometry()?.setCenter([x * params.mPerPx, -y * params.mPerPx]);
