@@ -2,13 +2,12 @@
   import { browser } from '$app/env';
   import { genRetrieve } from '$src/lib/fetcher';
   import { currRna } from '$src/lib/store';
-  import { clickOutside, debounce } from '$src/lib/utils';
+  import { clickOutside, debounce, tooltip } from '$src/lib/utils';
   import { Fzf } from 'fzf';
   import { fade } from 'svelte/transition';
   import type getData from '../lib/fetcher';
   import Bar from './bar.svelte';
   import Scatter from './scatter.svelte';
-
   export let dataPromise: ReturnType<typeof getData>;
 
   let names: { [key: string]: number };
@@ -19,6 +18,7 @@
   let retrieve: (selected: string) => Promise<number[]>;
 
   let showSearch = true;
+  let currShow = '';
 
   const getHeader = async () => {
     [names, ptr] = await Promise.all([
@@ -38,7 +38,8 @@
     const he = getHeader().catch(console.error);
     await Promise.all([dp, he]);
     retrieve = genRetrieve(ptr, names, coords.length);
-    await setVal('GFAP');
+    currShow = 'GFAP';
+    setVal('GFAP');
   }
 
   if (browser) {
@@ -76,8 +77,10 @@
 
   const setVal = debounce(async (selected: string) => {
     if (!retrieve) return;
-    $currRna = { name: selected, values: await retrieve(selected) };
-  }, 50);
+    if ($currRna.name !== selected) {
+      $currRna = { name: selected, values: await retrieve(selected) };
+    }
+  }, 10);
 </script>
 
 <section class="flex flex-grow flex-col gap-y-2">
@@ -97,14 +100,20 @@
         class="fixed z-20 flex min-w-[200px] translate-y-12 flex-col rounded bg-gray-800/80 px-2 pt-1 pb-2  text-slate-100 backdrop-blur"
         use:clickOutside
         on:outclick={() => (showSearch = false)}
+        on:mouseout={() => setVal(currShow)}
+        on:blur={() => setVal(currShow)}
       >
         {#each chosen as { raw, embellished }}
-          <a
+          <div
             class="cursor-pointer rounded py-1.5 px-3 hover:bg-gray-700/80"
-            on:mouseenter={() => setVal(raw)}
-            on:click={() => (showSearch = false)}
-            >{@html embellished}
-          </a>
+            on:mousemove={() => setVal(raw)}
+            on:click={() => {
+              showSearch = false;
+              currShow = raw;
+            }}
+          >
+            {@html embellished}
+          </div>
         {/each}
         {#if chosen.length === 0}
           <i class="py-1 px-3 text-slate-300">No genes found.</i>
