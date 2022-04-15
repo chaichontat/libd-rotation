@@ -24,6 +24,21 @@ const config = {
         fs: {
           allow: [searchForWorkspaceRoot(process.cwd())]
         }
+      },
+      build: {
+        chunkSizeWarningLimit: 1024,
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'chart.js': ['chart.js'],
+              'vega-embed': ['vega-embed'],
+              ol: ['ol'],
+              'tippy.js': ['tippy.js'],
+              pako: ['pako'],
+              'apache-arrow': ['apache-arrow']
+            }
+          }
+        }
       }
     },
 
