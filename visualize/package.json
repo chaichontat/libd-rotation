@@ -28,6 +28,7 @@
     "eslint-plugin-svelte3": "^3.4.1",
     "node-fetch": "^3.2.3",
     "postcss": "^8.4.12",
+    "postcss-load-config": "^3.1.4",
     "prettier": "^2.6.0",
     "prettier-plugin-tailwindcss": "^0.1.8",
     "svelte": "^3.44.0",
@@ -48,6 +49,8 @@
     "fzf": "^0.5.1",
     "lru-cache": "^7.7.3",
     "ol": "^6.14.1",
-    "pako": "^2.0.4"
+    "pako": "^2.0.4",
+    "tippy.js": "^6.3.7",
+    "vega-embed": "^6.20.8"
   }
 }

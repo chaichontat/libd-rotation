@@ -24,7 +24,7 @@ async function getFiles(p: string, urls: string[]): Promise<Promise<void>[]> {
 async function run() {
   const jsons = await getFiles(
     path.join(dir, sample),
-    ['coords.arrow', 'data.arrow', 'ptr.json', 'names.json'].map(
+    ['coords.arrow', 'data.arrow', 'ptr.json', 'names.json', 'veg.json'].map(
       (name) => `${s3_url}/${sample}/${name}`
     )
   );

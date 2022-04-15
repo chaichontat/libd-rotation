@@ -1,4 +1,5 @@
 import LRU from 'lru-cache';
+import tippy from 'tippy.js';
 
 export function genLRU<K extends unknown[], V>(f: (...args: K) => V) {
   const cache = new LRU<string, V>({ max: 100 });
@@ -35,5 +36,15 @@ export function clickOutside(node: HTMLElement) {
     destroy() {
       document.removeEventListener('click', handleClick, true);
     }
+  };
+}
+
+export function tooltip(node: HTMLElement, content: string) {
+  node.setAttribute('aria-label', content);
+  node.title = '';
+  const tip = tippy(node, { content, delay: [100, 0] });
+  return {
+    update: (newmsg: string): void => tip.setContent(newmsg),
+    destroy: (): void => tip.destroy()
   };
 }

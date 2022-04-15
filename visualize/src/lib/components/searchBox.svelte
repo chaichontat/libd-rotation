@@ -1,9 +1,10 @@
-<script lang="ts">
+<script lang="ts" context="module">
   import { browser } from '$app/env';
   import { genRetrieve } from '$src/lib/fetcher';
   import { currRna } from '$src/lib/store';
   import { clickOutside, debounce } from '$src/lib/utils';
   import { Fzf } from 'fzf';
+  import { get } from 'svelte/store';
   import { fade } from 'svelte/transition';
   import { dataPromise } from '../../routes/index.svelte';
 
@@ -23,10 +24,29 @@
       ),
       fetch('/Br6522_Ant_IF/ptr.json').then((res) => res.json() as Promise<number[]>)
     ]);
+
     keys = Object.keys(names);
     fzf = new Fzf(keys, { limit: 8 });
   };
 
+  function highlightChars(str: string, indices: Set<number>): string {
+    const chars = str.split('');
+    return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
+  }
+
+  export const showVal = debounce(async (selected: string) => {
+    if (!selected || !retrieve) return;
+    if (get(currRna).name !== selected) {
+      currRna.set({ name: selected, values: await retrieve(selected) });
+    }
+  }, 10);
+
+  export const setVal = debounce((selected: string) => {
+    showVal(selected);
+  }, 10);
+</script>
+
+<script lang="ts">
   async function hydrate() {
     const dp = (async () => {
       ({ coords } = await dataPromise);
@@ -44,18 +64,6 @@
 
   let search = '';
   let chosen: { raw: string; embellished: string }[] = [{ raw: '', embellished: '' }];
-
-  function highlightChars(str: string, indices: Set<number>): string {
-    const chars = str.split('');
-    return chars.map((c, i) => (indices.has(i) ? `<b>${c}</b>` : c)).join('');
-  }
-
-  const setVal = debounce(async (selected: string) => {
-    if (!selected || !retrieve) return;
-    if ($currRna.name !== selected) {
-      $currRna = { name: selected, values: await retrieve(selected) };
-    }
-  }, 10);
 
   $: if (fzf) {
     showSearch = true;

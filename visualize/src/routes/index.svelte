@@ -30,8 +30,8 @@
 
   <div class="flex gap-x-4 text-right leading-6 text-slate-200">
     <p class="text-sm xl:text-base">
-      Hover at any spots to see cell type inference/transcriptomic data.<br />Click to lock spot.
-      Click on the same spot to unlock.
+      Hover at any spots to see cell type inference/transcriptomic data.<br />Click to lock
+      spot/point.
     </p>
 
     <div title="GitHub" class="flex-none items-center pr-6">

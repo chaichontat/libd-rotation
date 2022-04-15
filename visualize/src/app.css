@@ -22,6 +22,12 @@
   src: url('../static/fonts/cera.woff') format('woff');
 }
 
+@font-face {
+  font-family: 'Altone';
+  font-style: bold;
+  src: url('../static/fonts/AltoneTrial-Bold.ttf') format('truetype');
+}
+
 @tailwind base;
 @layer base {
   html {

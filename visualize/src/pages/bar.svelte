@@ -42,6 +42,7 @@
             reverse: true
           }
         },
+        // transitions: { active: { animation: false } },
         animation: { duration: 200 },
         plugins: {
           tooltip: { enabled: false },
