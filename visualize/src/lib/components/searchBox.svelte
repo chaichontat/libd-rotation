@@ -15,7 +15,6 @@
   let coords: { x: number; y: number }[];
   let retrieve: (selected: string) => Promise<number[]>;
 
-  let showSearch = true;
   let currShow = '';
   const getHeader = async () => {
     [names, ptr] = await Promise.all([
@@ -47,6 +46,7 @@
 </script>
 
 <script lang="ts">
+  let showSearch = true;
   async function hydrate() {
     const dp = (async () => {
       ({ coords } = await dataPromise);
@@ -91,7 +91,7 @@
   >
     {#each chosen as { raw, embellished }}
       <div
-        class="cursor-pointer rounded py-1.5 px-3 hover:bg-gray-700/80"
+        class="cursor-pointer rounded py-1.5 px-3 hover:bg-gray-700/80 active:bg-gray-600/80"
         on:mousemove={() => setVal(raw)}
         on:click={() => {
           showSearch = false;
