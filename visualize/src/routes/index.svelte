@@ -1,11 +1,11 @@
-<script lang="ts">
+<script lang="ts" context="module">
   import { browser } from '$app/env';
   import getData from '../lib/fetcher';
   import Mapp from '../pages/mapp.svelte';
   import Rna from '../pages/rna.svelte';
 
-  const sample = 'Br6522_Ant_IF';
-  const proteinMap = {
+  export const sample = 'Br6522_Ant_IF';
+  export const proteinMap = {
     DAPI: 2,
     TMEM119: 6,
     Olig2: 5,
@@ -15,8 +15,7 @@
     None: 7
   };
 
-  let dataPromise: ReturnType<typeof getData>;
-  if (browser) dataPromise = getData(sample);
+  export const dataPromise = browser ? getData(sample) : undefined;
 </script>
 
 <svelte:head><title>Loopy Browser</title></svelte:head>
@@ -57,6 +56,6 @@
 </div>
 
 <main class="flex flex-wrap gap-x-6 md:flex-nowrap">
-  <Mapp {sample} {proteinMap} {dataPromise} />
-  <Rna {dataPromise} />
+  <Mapp />
+  <Rna />
 </main>

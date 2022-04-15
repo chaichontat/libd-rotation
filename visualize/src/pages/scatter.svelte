@@ -8,9 +8,8 @@
   import type getData from '../lib/fetcher';
   import { currRna, store } from '../lib/store';
   import { genLRU } from '../lib/utils';
+  import { dataPromise } from '../routes/index.svelte';
   let curr = 0;
-
-  export let dataPromise: ReturnType<typeof getData>;
 
   let coords: Awaited<typeof dataPromise>['coords'];
   let myChart: Chart<'scatter', { x: number; y: number }[], string>;
