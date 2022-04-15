@@ -1,16 +1,14 @@
 <script lang="ts">
   import { browser } from '$app/env';
-
   import Chart from 'chart.js/auto/auto.js';
   import { onMount } from 'svelte';
-  import type getData from '../lib/fetcher';
   import { multipleSelect, store } from '../lib/store';
+  import { dataPromise } from '../routes/index.svelte';
 
-  export let dataPromise: ReturnType<typeof getData>;
   let data: Awaited<typeof dataPromise>['data'];
 
   (async () => {
-    ({ data } = await dataPromise);
+    if (browser) ({ data } = await dataPromise);
   })().catch(console.error);
 
   Chart.defaults.font.size = 14;
@@ -44,6 +42,7 @@
             reverse: true
           }
         },
+        // transitions: { active: { animation: false } },
         animation: { duration: 200 },
         plugins: {
           tooltip: { enabled: false },

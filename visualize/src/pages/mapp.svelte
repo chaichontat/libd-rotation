@@ -17,15 +17,14 @@
   import ButtonGroup from '../lib/components/buttonGroup.svelte';
   import Colorbar from '../lib/components/colorbar.svelte';
   import type getData from '../lib/fetcher';
+  import { fetchArrow } from '../lib/fetcher';
   import { select } from '../lib/mapp/selector';
   import { currRna, params, store } from '../lib/store';
+  import { dataPromise, proteinMap, sample } from '../routes/index.svelte';
 
   let elem: HTMLDivElement;
-  export let sample: string;
-  export let proteinMap: { [key: string]: number };
   let selecting = false;
-  const proteins = Object.keys(proteinMap);
-  export let dataPromise: ReturnType<typeof getData>;
+  const proteins = Object.keys(proteinMap) as keyof typeof proteinMap;
   const getColorParams = colorVarFactory(proteinMap);
 
   let coords: Awaited<typeof dataPromise>['coords'];
@@ -96,6 +95,7 @@
   const selectStyle = new Style({ stroke: new Stroke({ color: '#ffffff', width: 1 }) });
   const { circleFeature, activeLayer } = getCanvasCircle(selectStyle);
   let { spotsSource, addData } = getWebGLCircles();
+  let { spotsSource: dapi, addData: adddapi } = getWebGLCircles();
   let spotsLayer: WebGLPointsLayer<VectorSource<Point>>;
 
   async function hydrate(
@@ -106,6 +106,8 @@
     addData(coords);
     ({ draw, drawClear } = select(map, spotsSource.getFeatures()));
     draw.on('drawend', () => (selecting = false));
+
+    adddapi(await fetchArrow<{ x: number; y: number }[]>(sample, 'coordsdapi'));
   }
 
   onMount(() => {
@@ -113,6 +115,20 @@
       // @ts-expect-error
       source: spotsSource,
       style: genStyle()
+    });
+
+    const dapiLayer = new WebGLPointsLayer({
+      // @ts-expect-error
+      source: dapi,
+      style: {
+        symbol: {
+          symbolType: 'square',
+          size: 4,
+          color: '#ffffff',
+          opacity: 0.5
+        }
+      },
+      minZoom: 4
     });
 
     bgLayer = new TileLayer({
@@ -131,7 +147,7 @@
 
     map = new Map({
       target: 'map',
-      layers: [bgLayer, spotsLayer, activeLayer],
+      layers: [bgLayer, spotsLayer, dapiLayer, activeLayer],
       view: sourceTiff.getView()
     });
 

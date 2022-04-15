@@ -29,6 +29,12 @@ import { tableFromIPC } from 'apache-arrow';
 import pako from 'pako';
 import { genLRU } from './utils';
 
+export async function fetchArrow<T>(sample: string, name: string) {
+  const table = await fetch(`/${sample}/${name}.arrow`).then((r) => tableFromIPC(r));
+  const coords = table.toArray().map((row) => row!.toJSON()) as unknown as T;
+  return coords;
+}
+
 export async function fetchAll(sample: string) {
   const [table, coordsTable] = await Promise.all(
     [`/${sample}/data.arrow`, `/${sample}/coords.arrow`].map(async (url) =>

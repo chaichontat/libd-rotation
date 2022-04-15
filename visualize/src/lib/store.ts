@@ -24,3 +24,8 @@ export const currRna: Writable<{ name: string; values: number[] }> = writable({
 export const multipleSelect: Writable<number[]> = writable([]);
 
 export const params = { spotDiam: 65e-6, mPerPx: 0.497e-6 };
+
+export const genes: Writable<{ ptr: number[]; names: Record<string, number> }> = writable({
+  ptr: [],
+  names: {}
+});
