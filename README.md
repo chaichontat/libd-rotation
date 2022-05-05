@@ -44,4 +44,11 @@ Options:
   --help              Show this message and exit.
 ```
 
+The output file can be opened with `np.load`,
+which is a matrix of the same size as your image.
+The values correspond to the segment's id.
+This is a format that can be analyzed with 
+[`skimage.measure.regionprops`](https://scikit-image.org/docs/dev/api/skimage.measure.html#skimage.measure.regionprops)
+and is compatible with typical binary image operations (dilation, etc).
+
 This takes around ~5 minutes on an 20000 × 20000 image with a Tesla A100.
