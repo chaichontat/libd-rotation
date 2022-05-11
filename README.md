@@ -59,5 +59,5 @@ pip install cellpose
 
 ## Process ROI
 
-A script/notebook is available at [scripts/segmentation/process_roi.py](scripts/segmentation/process_roi.py).
+A script/notebook is available at [scripts/segmentation/process_mask.py](scripts/segmentation/process_mask.py).
 This script extracts the physical parameters of each mask and assign it to the nearest spot.
