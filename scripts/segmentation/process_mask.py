@@ -24,29 +24,38 @@
 #
 # and relate them to Visium spots.
 #
-
 # %%
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 import tifffile
-from scanpy import read_visium
 from scipy.spatial import KDTree
 from skimage.measure import regionprops, regionprops_table
 
 sns.set()
 
-adata = read_visium("/Users/chaichontat/Documents/VIF/Br2720_Ant_IF")
 img_path = "Br2720.tif"
 out_path = "Br2720_Ant_IF.csv"
 mask_path = "/Users/chaichontat/Downloads/V10B01-087_A1_masks.npy"
+spot_path = "/Users/chaichontat/Documents/VIF/Br2720_Ant_IF/spatial/tissue_positions_list.csv"
 names = {0: "junk", 1: "dapi", 2: "gfap", 3: "neun", 4: "olig2", 5: "tmem119"}
 thresholds = {
     "neun": 10,
     "olig2": 10,
     "tmem119": 25,
 }
+m_per_px = 0.497e-6
+spot_radius = 65e-6
+
+
+assert set(thresholds.keys()).issubset(set(names.values()))
+raw = pd.read_csv(
+    spot_path,
+    header=None,
+    names=["barcode", "included", "row", "col", "x", "y"],
+)
+raw = raw.iloc[raw.included[raw.included == 1].index].reset_index().drop(columns=["included", "index"])
 
 
 def setup():
@@ -61,8 +70,8 @@ def setup():
 
     general = regionprops_table(masks, properties=["centroid", "area"])
     its["area"] = general["area"]
-    its["y"] = general["centroid-0"]
-    its["x"] = general["centroid-1"]
+    its["x"] = general["centroid-0"]
+    its["y"] = general["centroid-1"]
 
     return pd.DataFrame(its), masks, imgs
 
@@ -100,9 +109,10 @@ def plot_roi(idx: int, vmax: int = 128, nrows: int = 3, ncols: int = 2):
 
 
 # %%
-# Plot ROI
+# Plot ROI - sanity check
 plot_roi(4)
-
+plt.scatter(raw["x"], raw["y"], 2)
+plt.scatter(df["y"], df["x"], 2)
 # %% [markdown]
 # ### Process ROI properties.
 #
@@ -118,7 +128,7 @@ props = regionprops_table(
 )
 
 # Build KD tree for nearest neighbor search.
-kd = KDTree(adata.obsm["spatial"])
+kd = KDTree(raw[["x", "y"]])
 
 dist, idx = kd.query(df[["x", "y"]])
 dist = pd.DataFrame({"dist": dist, "idx": idx})
@@ -134,9 +144,7 @@ sns.histplot(data=df, x="area")
 # masks whose centroid is farther than the spot radius (aka not inside the spot).
 
 # %%
-spot_radius = 130e-6 / 2
-px_dist = spot_radius / 0.497e-6  # meter per px.
-
+px_dist = spot_radius / m_per_px  # meter per px.
 filtered = combi[(combi.area > 200) & (combi.dist < px_dist)]
 
 summed = filtered[[f"N_{name}" for name in thresholds] + ["idx"]].groupby("idx").sum().astype(int)
@@ -144,18 +152,10 @@ means = filtered[[f"{name}" for name in thresholds] + ["idx"]].groupby("idx").me
 
 # %% [markdown]
 # ### Export
-# Open spaceranger output
-
 # %%
-raw = pd.read_csv(
-    "/Users/chaichontat/Documents/VIF/Br2720_Ant_IF/spatial/tissue_positions_list.csv",
-    header=None,
-    names=["barcode", "included", "row", "col", "x", "y"],
-)
-
 out = pd.concat(
     [
-        raw.iloc[raw.included[raw.included == 1].index].reset_index(),
+        raw,
         summed,
         filtered[["idx", "dist"]].groupby("idx").count().dist.rename("counts"),
     ],
@@ -165,8 +165,6 @@ out.fillna(0, inplace=True)
 for name in thresholds:
     out[f"N_{name}"] = out[f"N_{name}"].astype(int)
 out.counts = out.counts.astype(int)
-
-out.drop(columns=["index", "included"], inplace=True)
 out.to_csv(out_path, float_format="%.3f")
 
 # %%
