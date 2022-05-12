@@ -39,8 +39,14 @@ sns.set()
 
 adata = read_visium("/Users/chaichontat/Documents/VIF/Br2720_Ant_IF")
 img_path = "Br2720.tif"
+out_path = "Br2720_Ant_IF.csv"
 mask_path = "/Users/chaichontat/Downloads/V10B01-087_A1_masks.npy"
 names = {0: "junk", 1: "dapi", 2: "gfap", 3: "neun", 4: "olig2", 5: "tmem119"}
+thresholds = {
+    "neun": 10,
+    "olig2": 10,
+    "tmem119": 25,
+}
 
 
 def setup():
@@ -118,6 +124,9 @@ dist, idx = kd.query(df[["x", "y"]])
 dist = pd.DataFrame({"dist": dist, "idx": idx})
 combi = pd.concat([df, dist], axis=1)
 
+# Threshold
+for name, t in thresholds.items():
+    combi[f"N_{name}"] = combi[name] > t
 # %%
 sns.histplot(data=df, x="area")
 # %% [markdown]
@@ -130,9 +139,8 @@ px_dist = spot_radius / 0.497e-6  # meter per px.
 
 filtered = combi[(combi.area > 200) & (combi.dist < px_dist)]
 
-means = filtered.groupby("idx").mean()
-means.drop(columns=["x", "y"], inplace=True)
-
+summed = filtered[[f"N_{name}" for name in thresholds] + ["idx"]].groupby("idx").sum().astype(int)
+means = filtered[[f"{name}" for name in thresholds] + ["idx"]].groupby("idx").mean()
 
 # %% [markdown]
 # ### Export
@@ -148,13 +156,17 @@ raw = pd.read_csv(
 out = pd.concat(
     [
         raw.iloc[raw.included[raw.included == 1].index].reset_index(),
-        means,
-        filtered.groupby("idx").count().dist.rename("counts"),
+        summed,
+        filtered[["idx", "dist"]].groupby("idx").count().dist.rename("counts"),
     ],
     axis=1,
 )
 out.fillna(0, inplace=True)
+for name in thresholds:
+    out[f"N_{name}"] = out[f"N_{name}"].astype(int)
 out.counts = out.counts.astype(int)
-out.to_csv("Br2720_Ant_IF.csv", float_format="%.3f")
+
+out.drop(columns=["index", "included"], inplace=True)
+out.to_csv(out_path, float_format="%.3f")
 
 # %%
