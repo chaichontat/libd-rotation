@@ -17,12 +17,13 @@
 # %% [markdown]
 # ## Process ROI
 # This script/notebook processes segmentation masks from `cellpose`
+# and groups them to the Visium spots they belong to.
+# Also, it thresholds the intensity of cell types and returns positive counts.
+# Note that it is possible for a cell to belong to be positive in multiple channels.
 #
 # This script is intended to be run as cells in VS Code.
 # It can be converted to a notebook by running `jupytext --to notebook process_mask.py`.
 # See https://jupytext.readthedocs.io/en/latest/using-cli.html for more information.
-#
-# and relate them to Visium spots.
 #
 # %%
 import matplotlib.pyplot as plt
@@ -47,6 +48,7 @@ thresholds = {
 }
 m_per_px = 0.497e-6
 spot_radius = 65e-6
+area_threshold = 200
 
 
 assert set(thresholds.keys()).issubset(set(names.values()))
@@ -145,7 +147,7 @@ sns.histplot(data=df, x="area")
 
 # %%
 px_dist = spot_radius / m_per_px  # meter per px.
-filtered = combi[(combi.area > 200) & (combi.dist < px_dist)]
+filtered = combi[(combi.area > area_threshold) & (combi.dist < px_dist)]
 
 summed = filtered[[f"N_{name}" for name in thresholds] + ["idx"]].groupby("idx").sum().astype(int)
 means = filtered[[f"{name}" for name in thresholds] + ["idx"]].groupby("idx").mean()
