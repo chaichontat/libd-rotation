@@ -58,6 +58,10 @@ pip install cellpose
 ```
 
 ## Process ROI
+Use the environment [`environment-seg.yml`](environment-seg.yml).
+
+This jupyter notebook has an interactive visualization tool for masks [scripts/segmentation/preview.ipynb](scripts/segmentation/preview.ipynb).
+Run the notebook. Select cells in the graph and see the actual mask/real image.
 
 A script/notebook is available at [scripts/segmentation/process_mask.py](scripts/segmentation/process_mask.py).
 This script extracts the physical parameters of each mask and assign it to the nearest spot.
