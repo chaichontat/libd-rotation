@@ -1,0 +1,18 @@
+channels:
+  - "conda-forge"
+  - pyviz
+dependencies:
+  - python=3.10
+  - altair
+  - jupyter
+  - jupyterlab
+  - matplotlib
+  - numpy
+  - tifffile
+  - pandas
+  - panel
+  - pip
+  - scikit-image
+  - seaborn
+  - pip:
+    - jupyter_bokeh
