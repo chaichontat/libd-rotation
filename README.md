@@ -59,5 +59,7 @@ pip install cellpose
 
 ## Process ROI
 
+Use [scripts/segmentation/preview.py](scripts/segmentation/preview.py) to interactively view cells at different intensities.
+
 A script/notebook is available at [scripts/segmentation/process_roi.py](scripts/segmentation/process_roi.py).
 This script extracts the physical parameters of each mask and assign it to the nearest spot.
