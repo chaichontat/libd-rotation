@@ -112,20 +112,24 @@ def count_cells(spots: pd.DataFrame, props: pd.DataFrame):
         props[f"N_{name}"] = props[name] > t
     # Filters out masks that are smaller than a threshold and
     # masks whose centroid is farther than the spot radius (aka not inside the spot).
-
     px_dist = spot_radius / m_per_px  # meter per px.
-    filtered = props[(props.area > area_threshold) & (props.dist < px_dist)]
-    summed = filtered[[f"N_{name}" for name in thresholds] + ["idx"]].groupby("idx").sum().astype(int)
+    filtered = props[(props.area > area_threshold) & (props.dist < px_dist)].reset_index(drop=True).copy()
+    filtered["xy"] = pd.Series(filtered[["x", "y"]].values.tolist())
+
+    counts = filtered[[f"N_{name}" for name in thresholds] + ["idx"]].groupby("idx").sum().astype(int)
+
     # means = filtered[[f"{name}" for name in thresholds] + ["idx"]].groupby("idx").mean()
     out = pd.concat(
         [
             spots,
-            summed,
+            counts,
             filtered[["idx", "dist"]].groupby("idx").count().dist.rename("counts"),
+            filtered[["idx", "xy"]].groupby("idx")["xy"].agg(list),
         ],
         axis=1,
     )
     out.fillna(0, inplace=True)
+
     for name in thresholds:
         out[f"N_{name}"] = out[f"N_{name}"].astype(int)
     out.counts = out.counts.astype(int)
@@ -152,7 +156,7 @@ thresholds = {
 m_per_px = 0.497e-6
 spot_radius = 65e-6
 area_threshold = 200
-for ii, n in enumerate(["Br2720_Ant_IF", "Br6432_Ant_IF", "Br6522_Ant_IF", "Br8667_Post_IF"]):
+for ii, n in enumerate(["Br6522_Ant_IF"]):
     img_path = f"/Users/chaichontat/Documents/VIF/{n}.tif"
     out_path = f"{n}.csv"
     mask_path = f"/Users/chaichontat/Downloads/V10B01-087_{chr(65+ii)}1_masks.npy"
